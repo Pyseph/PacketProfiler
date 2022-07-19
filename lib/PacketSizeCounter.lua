@@ -73,6 +73,7 @@ local CFrameSpecialCases = {
 	[CFrame.Angles(0, math.rad(90), math.rad(180))] 	= true,		[CFrame.Angles(0, math.rad(-90), math.rad(180))] 			= true,
 }
 
+
 local function GetDataByteSize(Data: any, AlreadyTraversed: {[{[any]: any}]: boolean})
 	local DataType = typeof(Data)
 	if TypeByteSizes[DataType] then
