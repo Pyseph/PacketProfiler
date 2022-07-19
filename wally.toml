@@ -1,0 +1,8 @@
+[package]
+name = "pysephwasntavailable/packetanalyzer"
+description = "Remote packet analyzer"
+version = "0.1.0"
+registry = "https://github.com/pysephwasntavailable/packetanalyzer"
+
+[dependencies]
+roact = "roblox/roact@1.4.4"

@@ -1,0 +1,16 @@
+{
+	"name": "[ClientCast] testing",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"ClientCast": {
+				"$path": "lib"
+			}
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"$path": "testing"
+		}
+	}
+}
