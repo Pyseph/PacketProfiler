@@ -1,0 +1,11 @@
+[package]
+name = "stravant/goodsignal"
+description = "A fast Signal class implementation that has full feature parity with Roblox' RBXScriptSignal"
+version = "0.2.1"
+license = "MIT"
+authors = ["Mark Langen <stravant@gmail.com>"]
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+# None :)

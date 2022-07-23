@@ -1,6 +1,9 @@
 {
 	"name": "PacketAnalyzer",
 	"tree": {
-		"$path": "lib"
+		"$path": "src",
+		"Packages": {
+			"$path": "Packages"
+		}
 	}
 }

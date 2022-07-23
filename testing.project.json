@@ -1,0 +1,19 @@
+{
+	"name": "PacketAnalyzer",
+	"tree": {
+		"$className": "DataModel",
+		"PluginDebugService": {
+			"$className": "PluginDebugService",
+			"user_PacketAnalyzer.rbxm": {
+				"$className": "Plugin",
+				"PacketAnalyzer": {
+					"$path": "src",
+					"Packages": {
+						"$path": "Packages"
+					}
+				}
+			}
+		}
+	},
+	"servePort": 38700
+}

@@ -1,10 +1,11 @@
 [package]
 name = "pysephwasntavailable/packetanalyzer"
-description = "Remote packet analyzer"
 version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
+description = "Remote packet analyzer"
 license = "MIT"
-registry = "https://github.com/pysephwasntavailable/packetanalyzer"
 
 [dependencies]
-Roact = "roblox/roact@1.4.4"
+Roact = "pysephwasntavailable/roact-constant-fork@1.5.0"
+Signal = "stravant/goodsignal@0.2.1"
