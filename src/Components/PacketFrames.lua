@@ -1,9 +1,9 @@
 local RunService = game:GetService("RunService")
 
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketAnalyzer.Packages
-local Components = Plugin.PacketAnalyzer.Components
-local Modules = Plugin.PacketAnalyzer.Modules
+local Packages = Plugin.PacketProfiler.Packages
+local Components = Plugin.PacketProfiler.Components
+local Modules = Plugin.PacketProfiler.Modules
 
 local Roact = require(Packages.Roact)
 local StudioTheme = require(Components.StudioTheme)

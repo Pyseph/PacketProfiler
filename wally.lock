@@ -3,7 +3,7 @@
 registry = "test"
 
 [[package]]
-name = "pysephwasntavailable/packetanalyzer"
+name = "pysephwasntavailable/packetprofiler"
 version = "0.1.0"
 dependencies = [["Roact", "pysephwasntavailable/roact-constant-fork@1.5.0"], ["Signal", "stravant/goodsignal@0.2.1"]]
 

@@ -1,5 +1,5 @@
 {
-	"name": "PacketAnalyzer",
+	"name": "PacketProfiler",
 	"tree": {
 		"$path": "src",
 		"Packages": {

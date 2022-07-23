@@ -1,9 +1,9 @@
 [package]
-name = "pysephwasntavailable/packetanalyzer"
+name = "pysephwasntavailable/packetprofiler"
 version = "0.1.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-description = "Remote packet analyzer"
+description = "Remote packet profiler"
 license = "MIT"
 
 [dependencies]

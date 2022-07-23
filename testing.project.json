@@ -1,12 +1,12 @@
 {
-	"name": "PacketAnalyzer",
+	"name": "PacketProfiler",
 	"tree": {
 		"$className": "DataModel",
 		"PluginDebugService": {
 			"$className": "PluginDebugService",
-			"user_PacketAnalyzer.rbxm": {
+			"user_PacketProfiler.rbxm": {
 				"$className": "Plugin",
-				"PacketAnalyzer": {
+				"PacketProfiler": {
 					"$path": "src",
 					"Packages": {
 						"$path": "Packages"
