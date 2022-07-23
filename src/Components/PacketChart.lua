@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
 local Packages = Plugin.PacketProfiler.Packages
 local Components = Plugin.PacketProfiler.Components
+local Modules = Plugin.PacketProfiler.Modules
 
 local Roact = require(Packages.Roact)
 local Signal = require(Packages.Signal)
@@ -11,6 +12,8 @@ local Signal = require(Packages.Signal)
 local StudioWidget = require(Components.StudioWidget)
 local StudioTheme = require(Components.StudioTheme)
 local PacketCircleArcs = require(Components.PacketCircleArcs)
+
+local TableToString = require(Modules.TableToString)
 
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
@@ -28,24 +31,83 @@ local function GetRemoteColor()
 end
 
 local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME)
+local RemoteNameLabeler = nil
 if RemoteNameModule == nil then
 	local Connection
 	Connection = ReplicatedStorage.DescendantAdded:Connect(function(Descendant)
 		if Descendant.Name == REMOTE_NAME_MODULE_NAME then
-			RemoteNameModule = require(Descendant)
+			assert(typeof(require(Descendant)) == "function", "Return of RemoteName.profiler must be a function")
+			RemoteNameLabeler = require(Descendant)
 			Connection:Disconnect()
 		end
 	end)
 else
-	RemoteNameModule = require(RemoteNameModule)
+	assert(typeof(require(RemoteNameModule)) == "function", "Return of RemoteName.profiler must be a function")
+	RemoteNameLabeler = require(RemoteNameLabeler)
 end
 
 local function GetRemoteName(RemoteObject: RemoteEvent, FirstArgument: any?)
-	if RemoteNameModule ~= nil then
-		return RemoteNameModule(RemoteObject, FirstArgument)
+	if RemoteNameLabeler ~= nil then
+		return RemoteNameLabeler(RemoteObject, FirstArgument)
 	else
 		return RemoteObject.Name
 	end
+end
+
+local DataChartItem = Roact.Component:extend("DataChartItem")
+
+function DataChartItem:init()
+	self.RemoteData, self.ShowRemoteData = Roact.createBinding(false)
+end
+function DataChartItem:render()
+	local Arc = self.props.Arc
+	return StudioTheme(function(Theme: StudioTheme)
+		return Roact.createElement("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 22),
+			AutomaticSize = Enum.AutomaticSize.Y,
+		}, {
+			[1 .. "Information"] = Roact.createElement("TextButton", {
+				Font = Enum.Font.SourceSans,
+				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.2fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
+				RichText = true,
+				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 20),
+				ZIndex = 3,
+				[Roact.Event.Activated] = function()
+					self.ShowRemoteData(not self.RemoteData:getValue())
+				end,
+			}),
+			[2 .. "RemoteData"] = Roact.createElement("TextLabel", {
+				Font = Enum.Font.Code,
+				RichText = true,
+				Text = self.RemoteData:map(function(Visible)
+					return Visible and "PacketData: " .. self.props.RemoteData or ""
+				end),
+				Visible = self.RemoteData,
+				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+				TextSize = 12,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+				BorderColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+				Position = UDim2.fromOffset(0, 20),
+				Size = UDim2.new(1, 0, 0, 20),
+			}),
+			[3 .. "Separator"] = Roact.createElement("Frame", {
+				AnchorPoint = Vector2.new(0, 1),
+				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+				BorderSizePixel = 0,
+				Position = UDim2.fromScale(0, 1),
+				Size = UDim2.new(1, 0, 0, 1),
+			}),
+			UIListLayout = Roact.createElement("UIListLayout"),
+		})
+	end)
 end
 
 local function DataChartItems(props)
@@ -54,31 +116,10 @@ local function DataChartItems(props)
 	local PercentOffset = 0
 	for _, Arc in next, props.Arcs do
 		PercentOffset -= Arc.Percent
-		ChartItems[PercentOffset] = StudioTheme(function(Theme: StudioTheme)
-			return Roact.createElement("Frame", {
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 22),
-			}, {
-				Information = Roact.createElement("TextLabel", {
-					Font = Enum.Font.SourceSans,
-					Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.2fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
-					RichText = true,
-					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
-					TextSize = 14,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 0, 20),
-					ZIndex = 3,
-				}),
-				BottomLine = Roact.createElement("Frame", {
-					AnchorPoint = Vector2.new(0, 1),
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
-					BorderSizePixel = 0,
-					Position = UDim2.fromScale(0, 1),
-					Size = UDim2.new(1, 0, 0, 1),
-				})
-			})
-		end)
+		ChartItems[PercentOffset] = Roact.createElement(DataChartItem, {
+			Arc = Arc,
+			RemoteData = Arc.RemoteData,
+		})
 	end
 
 	return Roact.createFragment(ChartItems)
@@ -96,28 +137,33 @@ end
 
 function PacketChart:didMount()
 	self.props.Signals.ProfilerFrameSelected:Connect(function(FrameData)
-		local ArcSizes = {}
+		local ArcData = {}
 
 		for _, Packet in next, FrameData.Packets do
-			local RemoteName = GetRemoteName(Packet.Remote, Packet.FirstArgument)
+			local RemoteName = GetRemoteName(Packet.Remote, Packet.Data[1])
 			local PacketSize = Packet.Size
 
-			if not ArcSizes[RemoteName] then
-				ArcSizes[RemoteName] = 0
+			if not ArcData[RemoteName] then
+				ArcData[RemoteName] = {
+					Size = 0,
+					Data = "",
+				}
 			end
-			ArcSizes[RemoteName] += PacketSize
+			ArcData[RemoteName].Size += PacketSize
+			ArcData[RemoteName].Data ..= (Packet.Data and TableToString(Packet.Data) or "[None]") .. "\n"
 		end
 
 		local Arcs = {}
 		local TotalSize = FrameData.TotalSize
-		for RemoteName, PacketSize in next, ArcSizes do
-			local Percent = PacketSize / TotalSize
+		for RemoteName, RemoteData in next, ArcData do
+			local Percent = RemoteData.Size / TotalSize
 			local Color = GetRemoteColor()
 			table.insert(Arcs, {
 				Name = RemoteName,
-				DataSize = PacketSize,
+				DataSize = RemoteData.Size,
 				Percent = Percent * 100,
 				Color = Color,
+				RemoteData = string.sub(RemoteData.Data, 1, -2),
 			})
 		end
 
@@ -167,6 +213,7 @@ function PacketChart:render()
 				Position = UDim2.fromScale(1, 0),
 				AnchorPoint = Vector2.new(1, 0),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				CanvasSize = UDim2.new(),
 				BorderSizePixel = 0,
 				Visible = not IsEditMode,
 

@@ -89,7 +89,7 @@ function PacketFrames:init()
 		self.CurrentFrame.TotalSize += PacketSize
 		table.insert(self.CurrentFrame.Packets, {
 			Remote = Remote,
-			FirstArgument = (...),
+			Data = {...},
 			Size = PacketSize,
 		})
 	end
