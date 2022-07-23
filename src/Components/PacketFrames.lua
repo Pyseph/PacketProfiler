@@ -80,7 +80,7 @@ function PacketFrames:init()
 	})
 	self.PacketsChanged, self.SetPacketsChanged = Roact.createBinding(self.PacketFrames)
 
-	function self.RemoteCallback(RemoteName, ...)
+	function self.RemoteCallback(Remote, ...)
 		if not self.Enabled then
 			return
 		end
@@ -88,7 +88,8 @@ function PacketFrames:init()
 		local PacketSize = CountPacketSize(...)
 		self.CurrentFrame.TotalSize += PacketSize
 		table.insert(self.CurrentFrame.Packets, {
-			RemoteName = RemoteName,
+			Remote = Remote,
+			FirstArgument = (...),
 			Size = PacketSize,
 		})
 	end
@@ -185,17 +186,15 @@ function PacketFrames:didMount()
 
 		for _, Object in next, game:GetDescendants() do
 			if Object:IsA("RemoteEvent") then
-				local RemoteName = Object.Name
 				Object[RemoteContext]:Connect(function(...)
-					self.RemoteCallback(RemoteName, ...)
+					self.RemoteCallback(Object, ...)
 				end)
 			end
 		end
 		game.DescendantAdded:Connect(function(Object)
 			if Object:IsA("RemoteEvent") then
-				local RemoteName = Object.Name
 				Object[RemoteContext]:Connect(function(...)
-					self.RemoteCallback(RemoteName, ...)
+					self.RemoteCallback(Object, ...)
 				end)
 			end
 		end)

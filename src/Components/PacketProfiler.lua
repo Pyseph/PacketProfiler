@@ -16,15 +16,16 @@ local TOPBAR_HEIGHT = 10
 local IsEditMode = RunService:IsEdit()
 
 local function TopbarText(props)
-	local EndProps = {}
-	local TextSize = TextService:GetTextSize(props.Text, props.TextSize, props.Font, Vector2.new(10000, TOPBAR_HEIGHT + 1))
-	EndProps.Size = UDim2.fromOffset(TextSize.X, TOPBAR_HEIGHT + 1)
-
-	for Key, Value in pairs(props) do
-		EndProps[Key] = Value
-	end
-
-	return Roact.createElement("TextLabel", EndProps)
+	return Roact.createElement("TextButton", {
+		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
+		TextSize = TOPBAR_HEIGHT + 2,
+		Font = Enum.Font.Code,
+		Text = props.Text,
+		AutomaticSize = Enum.AutomaticSize.X,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		[Roact.Event.Activated] = props.OnClick,
+	})
 end
 
 local function TopbarButton(props)
@@ -127,21 +128,25 @@ function PacketProfiler:init()
 		MaxFrameSize = 1*1000,
 	})
 
-	self.PacketProfilerPaused = IsEditMode
+	self.PacketProfilerPaused, self.SetPacketProfilerPaused = Roact.createBinding(false)
 	self.OnPacketProfilerPaused = Signal.new()
+
+	function self.Pause()
+		local IsPaused = not self.PacketProfilerPaused:getValue()
+		self.SetPacketProfilerPaused(IsPaused)
+		self.OnPacketProfilerPaused:Fire(IsPaused)
+	end
 end
 
 function PacketProfiler:didMount()
 	self.InputBeganConnection = UserInputService.InputBegan:Connect(function(Input)
 		if UserInputService:IsKeyDown(Enum.KeyCode.Z) and Input.KeyCode == Enum.KeyCode.P then
-			local IsPaused = not self.PacketProfilerPaused
-			self.PacketProfilerPaused = IsPaused
-			self.OnPacketProfilerPaused:Fire(IsPaused)
+			self.Pause()
 		end
 	end)
 
 	self.OnPacketProfilerPaused:Connect(function(Paused)
-		self.PacketProfilerPaused = Paused
+		self.SetPacketProfilerPaused(Paused)
 	end)
 end
 
@@ -184,13 +189,8 @@ function PacketProfiler:render()
 						Padding = UDim.new(0, 5),
 					}),
 					Title = Roact.createElement(TopbarText, {
-						BackgroundTransparency = 1,
 						Text = "PacketProfiler",
-						TextColor3 = Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
-						TextSize = TOPBAR_HEIGHT + 2,
-						Font = Enum.Font.Code,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextYAlignment = Enum.TextYAlignment.Center,
+						Theme = Theme,
 					}),
 					MaxKBScale = Roact.createElement(TopbarButtonsGroup, {
 						Theme = Theme,
@@ -230,6 +230,13 @@ function PacketProfiler:render()
 							},
 						},
 					}),
+					PausedLabel = Roact.createElement(TopbarText, {
+						Text = self.PacketProfilerPaused:map(function(IsPaused)
+							return IsPaused and "[Paused]" or "[Running]"
+						end),
+						Theme = Theme,
+						OnClick = self.Pause,
+					})
 				})
 			end),
 		})

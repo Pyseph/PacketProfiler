@@ -4,7 +4,7 @@
 		"$className": "DataModel",
 		"PluginDebugService": {
 			"$className": "PluginDebugService",
-			"user_PacketProfiler.rbxm": {
+			"user_PacketProfilerTest.rbxm": {
 				"$className": "Plugin",
 				"PacketProfiler": {
 					"$path": "src",

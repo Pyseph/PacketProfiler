@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
 local Packages = Plugin.PacketProfiler.Packages
@@ -14,6 +15,7 @@ local PacketCircleArcs = require(Components.PacketCircleArcs)
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
 local DATA_LIST_OFFSET = 10
+local REMOTE_NAME_MODULE_NAME = "RemoteName.profiler"
 
 local IsEditMode = RunService:IsEdit()
 
@@ -25,11 +27,34 @@ local function GetRemoteColor()
 	return Color
 end
 
+local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME)
+if RemoteNameModule == nil then
+	local Connection
+	Connection = ReplicatedStorage.DescendantAdded:Connect(function(Descendant)
+		if Descendant.Name == REMOTE_NAME_MODULE_NAME then
+			RemoteNameModule = require(Descendant)
+			Connection:Disconnect()
+		end
+	end)
+else
+	RemoteNameModule = require(RemoteNameModule)
+end
+
+local function GetRemoteName(RemoteObject: RemoteEvent, FirstArgument: any?)
+	if RemoteNameModule ~= nil then
+		return RemoteNameModule(RemoteObject, FirstArgument)
+	else
+		return RemoteObject.Name
+	end
+end
+
 local function DataChartItems(props)
 	local ChartItems = {}
 
+	local PercentOffset = 0
 	for _, Arc in next, props.Arcs do
-		ChartItems[-Arc.Percent] = StudioTheme(function(Theme: StudioTheme)
+		PercentOffset -= Arc.Percent
+		ChartItems[PercentOffset] = StudioTheme(function(Theme: StudioTheme)
 			return Roact.createElement("Frame", {
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 22),
@@ -74,7 +99,7 @@ function PacketChart:didMount()
 		local ArcSizes = {}
 
 		for _, Packet in next, FrameData.Packets do
-			local RemoteName = Packet.RemoteName
+			local RemoteName = GetRemoteName(Packet.Remote, Packet.FirstArgument)
 			local PacketSize = Packet.Size
 
 			if not ArcSizes[RemoteName] then
@@ -100,6 +125,7 @@ function PacketChart:didMount()
 			return a.Percent > b.Percent
 		end)
 
+		print(Arcs)
 		self:setState({
 			Arcs = Arcs,
 		})
