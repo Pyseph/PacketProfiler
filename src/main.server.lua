@@ -8,8 +8,8 @@ local MainPlugin = require(Components.MainPlugin)
 
 local Toolbar = Plugin:CreateToolbar("Packet Profiler")
 
-local PacketProfiler = Toolbar:CreateButton("Packet Profiler", "Open Profiler Graph", "rbxassetid://10283407097")
-local PacketChart = Toolbar:CreateButton("Packet Chart", "Open Pie Chart", "rbxassetid://10283406077")
+local PacketProfiler = Toolbar:CreateButton("Open Profiler", "Open Profiler Graph", "rbxassetid://10283407097")
+local PacketChart = Toolbar:CreateButton("Open Chart", "Open Pie Chart", "rbxassetid://10283406077")
 
 local Main = Roact.createElement(MainPlugin, {
 	PacketProfiler = PacketProfiler,
