@@ -87,6 +87,12 @@ function DataChartItem:render()
 				Text = self.RemoteData:map(function(Visible)
 					return Visible and "PacketData: " .. self.props.RemoteData or ""
 				end),
+				[Roact.Change.Text] = function(Rbx: TextLabel)
+					if Rbx.Text ~= "" then
+						--TODO: add highlighting
+						--Highlight(Rbx)
+					end
+				end,
 				Visible = self.RemoteData,
 				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
 				TextSize = 12,
