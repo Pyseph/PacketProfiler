@@ -13,7 +13,7 @@ local StudioWidget = require(Components.StudioWidget)
 local StudioTheme = require(Components.StudioTheme)
 local PacketCircleArcs = require(Components.PacketCircleArcs)
 
-local TableToString = require(Modules.TableToString)
+local TableToSyntaxString = require(Modules.TableToSyntaxString)
 
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
@@ -85,14 +85,8 @@ function DataChartItem:render()
 				Font = Enum.Font.Code,
 				RichText = true,
 				Text = self.RemoteData:map(function(Visible)
-					return Visible and "PacketData: " .. self.props.RemoteData or ""
+					return Visible and self.props.RemoteData or ""
 				end),
-				[Roact.Change.Text] = function(Rbx: TextLabel)
-					if Rbx.Text ~= "" then
-						--TODO: add highlighting
-						--Highlight(Rbx)
-					end
-				end,
 				Visible = self.RemoteData,
 				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
 				TextSize = 12,
@@ -156,7 +150,7 @@ function PacketChart:didMount()
 				}
 			end
 			ArcData[RemoteName].Size += PacketSize
-			ArcData[RemoteName].Data ..= (Packet.Data and TableToString(Packet.Data) or "[None]") .. "\n"
+			ArcData[RemoteName].Data ..= "Packet data: " .. (Packet.Data and TableToSyntaxString(Packet.Data) or "[None]") .. "\n"
 		end
 
 		local Arcs = {}
