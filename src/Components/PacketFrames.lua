@@ -8,7 +8,7 @@ local Modules = Plugin.PacketProfiler.Modules
 local Roact = require(Packages.Roact)
 local StudioTheme = require(Components.StudioTheme)
 local CircularBuffer = require(Modules.CircularBuffer)
-local CountPacketSize = require(Modules.PacketSizeCounter)
+local GetRemotePacketSize = require(Modules.PacketSizeCounter)
 
 local MAX_FRAMES = 256
 local TOOLTIP_WIDTH = 200
@@ -85,7 +85,7 @@ function PacketFrames:init()
 			return
 		end
 
-		local PacketSize = CountPacketSize(...)
+		local PacketSize = GetRemotePacketSize(true, ...)
 		self.CurrentFrame.TotalSize += PacketSize
 		table.insert(self.CurrentFrame.Packets, {
 			Remote = Remote,

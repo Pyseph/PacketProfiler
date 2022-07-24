@@ -17,7 +17,7 @@ local TableToSyntaxString = require(Modules.TableToSyntaxString)
 
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
-local DATA_LIST_OFFSET = 10
+local DATA_LIST_OFFSET = 20
 local REMOTE_NAME_MODULE_NAME = "RemoteName.profiler"
 
 local IsEditMode = RunService:IsEdit()
@@ -67,7 +67,7 @@ function DataChartItem:render()
 			Size = UDim2.new(1, 0, 0, 22),
 			AutomaticSize = Enum.AutomaticSize.Y,
 		}, {
-			[1 .. "Information"] = Roact.createElement("TextButton", {
+			["1Information"] = Roact.createElement("TextButton", {
 				Font = Enum.Font.SourceSans,
 				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.2fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
 				RichText = true,
@@ -80,8 +80,12 @@ function DataChartItem:render()
 				[Roact.Event.Activated] = function()
 					self.ShowRemoteData(not self.RemoteData:getValue())
 				end,
+			}, {
+				Padding = Roact.createElement("UIPadding", {
+					PaddingBottom = UDim.new(0, 4),
+				}),
 			}),
-			[2 .. "RemoteData"] = Roact.createElement("TextLabel", {
+			["2RemoteData"] = Roact.createElement("TextLabel", {
 				Font = Enum.Font.Code,
 				RichText = true,
 				Text = self.RemoteData:map(function(Visible)
@@ -94,16 +98,37 @@ function DataChartItem:render()
 				TextYAlignment = Enum.TextYAlignment.Top,
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
-				BorderColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
 				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.new(1, 0, 0, 20),
+				Size = UDim2.new(1, -2, 0, 20),
+			}, {
+				Padding = Roact.createElement("UIPadding", {
+					PaddingBottom = UDim.new(0, 4),
+					PaddingLeft = UDim.new(0, 3),
+				}),
+				UICorner = Roact.createElement("UICorner", {
+					CornerRadius = UDim.new(0, 4),
+				}),
+				UIStroke = Roact.createElement("UIStroke", {
+					Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				}),
 			}),
-			[3 .. "Separator"] = Roact.createElement("Frame", {
+			["3Separator"] = Roact.createElement("Frame", {
 				AnchorPoint = Vector2.new(0, 1),
 				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
 				BorderSizePixel = 0,
 				Position = UDim2.fromScale(0, 1),
 				Size = UDim2.new(1, 0, 0, 1),
+				Visible = self.RemoteData:map(function(Visible)
+					return not Visible
+				end),
+			}, {
+				Padding = Roact.createElement("UIPadding", {
+					PaddingTop = UDim.new(0, 4),
+				}),
+			}),
+			Padding = Roact.createElement("UIPadding", {
+				PaddingLeft = UDim.new(0, 1),
 			}),
 			UIListLayout = Roact.createElement("UIListLayout"),
 		})
@@ -201,7 +226,24 @@ function PacketChart:render()
 			BackgroundTransparency = 1,
 			Size = UDim2.fromOffset(PIE_CHART_SIZE, PIE_CHART_SIZE),
 			Visible = not IsEditMode,
+			Position = UDim2.fromOffset(4, 4),
 		}, {
+			-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
+			BackgroundUI = StudioTheme(function(Theme: StudioTheme)
+				return Roact.createElement("Frame", {
+					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+					Size = UDim2.fromScale(1, 1),
+					Visible = #self.state.Arcs > 0,
+				}, {
+					UICorner = Roact.createElement("UICorner", {
+						CornerRadius = UDim.new(0, 4),
+					}),
+					UIStroke = Roact.createElement("UIStroke", {
+						Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					}),
+				})
+			end),
 			PacketCircle = Roact.createElement(PacketCircleArcs, {
 				Arcs = self.state.Arcs,
 			}),

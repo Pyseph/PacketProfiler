@@ -1,6 +1,18 @@
 local Settings = settings()
 local Studio = Settings:GetService("Studio")
 
+local Modules = script.Parent
+local GetRemotePacketSize = require(Modules.PacketSizeCounter)
+
+local function GetByteSize(Value: any): string
+	local ValueSize = GetRemotePacketSize(true, Value)
+	if ValueSize < 1000 then
+		return ValueSize .. "B"
+	else
+		return string.format("%.2fKB", ValueSize / 1000)
+	end
+end
+
 local SpecialCharacters = {["\a"] = "\\a", ["\b"] = "\\b", ["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v", ["\0"] = "\\0"}
 local Keywords = { ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true, ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true, ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true, ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true, ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true, ["while"] = true, ["continue"] = true}
 
@@ -18,6 +30,7 @@ local StyleGuideColorEnums = {
 	funcname = Enum.StudioStyleGuideColor.ScriptFunctionName,
 	text = Enum.StudioStyleGuideColor.ScriptText,
 	["nil"] = Enum.StudioStyleGuideColor.ScriptKeyword,
+	bytesize = Enum.StudioStyleGuideColor.ScriptComment,
 }
 local StyleGuideColors = {}
 local c = {
@@ -108,6 +121,9 @@ local function TableToSyntaxString(Table, IgnoredTables, DepthData, Path)
 
 		local KeyClass, ValueClass = typeof(Key), typeof(Value)
 		local HasBrackets = false
+
+		local KeySize = KeyClass ~= "table" and ": " .. Syntax(GetByteSize(Key), "bytesize") .. " " or ""
+		local ValueSize = ValueClass ~= "table" and ": " .. Syntax(GetByteSize(Value), "bytesize") or ""
 		if KeyClass == "string" then
 			Key = string.gsub(Key, CONTROL_CHARS, SpecialCharacters)
 			if Keywords[Key] or not string.match(Key, VALID_VARIABLE) then
@@ -116,11 +132,12 @@ local function TableToSyntaxString(Table, IgnoredTables, DepthData, Path)
 			end
 		else
 			HasBrackets = true
-			Key = c["["] .. (KeyClass == "table" and string.gsub(TableToSyntaxString(Key, IgnoredTables, {Depth, Path}), NO_TRAILING, "%1") or SerializeType(Key, KeyClass)) .. c["]"]
+			local KeyString = (KeyClass == "table" and string.gsub(TableToSyntaxString(Key, IgnoredTables, {Depth, Path}), NO_TRAILING, "%1") or SerializeType(Key, KeyClass))
+			Key = c["["] .. KeyString .. c["]"]
 		end
 
 		Value = ValueClass == "table" and TableToSyntaxString(Value, IgnoredTables, {Depth, Path}, Path .. (HasBrackets and "" or ".") .. Key) or SerializeType(Value, ValueClass)
-		Result = Result .. LineTab .. (HasOrder and Value or Key .. " " .. Syntax("=", "operator") .. " " .. Value) .. Syntax(",", "keyword")
+		Result = Result .. LineTab .. (HasOrder and Value or Key .. KeySize .. Syntax("=", "operator") .. " " .. Value) .. ValueSize .. Syntax(",", "keyword")
 	end
 
 	return IsEmpty and Result .. c["}"] or Result .. "\n" .. TrailingTab .. c["}"]

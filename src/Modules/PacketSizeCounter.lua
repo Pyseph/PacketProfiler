@@ -128,8 +128,8 @@ local function GetDataByteSize(Data: any, AlreadyTraversed: {[{[any]: any}]: boo
 	end
 end
 
-local function GetRemotePacketSize(...: any): number
-	local Total = REMOTE_OVERHEAD
+local function GetRemotePacketSize(IgnoreRemoteOffset: boolean, ...: any): number
+	local Total = IgnoreRemoteOffset and 0 or REMOTE_OVERHEAD
 	local AlreadyTraversed = {}
 
 	for _, Data in ipairs({...}) do
