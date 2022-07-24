@@ -87,9 +87,9 @@ function PacketFrames:init()
 
 		local PacketSize = 0
 		if RunService:IsClient() then
-			PacketSize = GetRemotePacketSize(FirstArgument, ...)
+			PacketSize = GetRemotePacketSize(true, FirstArgument, ...)
 		else
-			PacketSize = GetRemotePacketSize(...)
+			PacketSize = GetRemotePacketSize(true, ...)
 		end
 
 		self.CurrentFrame.TotalSize += PacketSize
