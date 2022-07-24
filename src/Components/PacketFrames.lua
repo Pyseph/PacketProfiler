@@ -95,7 +95,7 @@ function PacketFrames:init()
 		self.CurrentFrame.TotalSize += PacketSize
 		table.insert(self.CurrentFrame.Packets, {
 			Remote = Remote,
-			Data = RunService:IsClient() and {...} or {select(2, ...)},
+			Data = RunService:IsClient() and {FirstArgument, ...} or {...},
 			Size = PacketSize,
 		})
 	end
