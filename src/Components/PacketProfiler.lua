@@ -168,8 +168,10 @@ function PacketProfiler:render()
 					Position = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 				}, {
 					PacketFrames = Roact.createElement(PacketFrames, {
+						Enabled = self.props.Enabled,
 						MaxFrameSize = self.state.MaxFrameSize,
 						OnPacketProfilerPaused = self.OnPacketProfilerPaused,
+						OnPacketProfilerEnabled = self.props.OnEnabled,
 						Signals = self.props.Signals,
 					})
 				})
@@ -196,6 +198,22 @@ function PacketProfiler:render()
 						Theme = Theme,
 						Text = "Max KB scale",
 						Options = {
+							{
+								Name = "10 B",
+								Callback = function()
+									self:setState({
+										MaxFrameSize = 10,
+									})
+								end,
+							},
+							{
+								Name = "100 B",
+								Callback = function()
+									self:setState({
+										MaxFrameSize = 100,
+									})
+								end,
+							},
 							{
 								Name = "1 KB",
 								Callback = function()

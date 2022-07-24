@@ -12,7 +12,10 @@ local MainPlugin = Roact.Component:extend("MainPlugin")
 
 function MainPlugin:init()
 	self.PacketProfilerEnabled, self.SetPacketProfilerEnabled = Roact.createBinding(Plugin:GetSetting("PacketProfilerEnabled") == true)
-	self.IsPacketChartEnabled, self.OnPacketChartEnabled = Plugin:GetSetting("PacketChartEnabled") == true, Signal.new()
+	self.OnPacketProfilerEnabled = Signal.new()
+
+	self.IsPacketChartEnabled = Plugin:GetSetting("PacketChartEnabled") == true
+	self.OnPacketChartEnabled = Signal.new()
 
 	self.props.PacketProfiler:SetActive(self.PacketProfilerEnabled:getValue())
 	self.props.PacketChart:SetActive(self.IsPacketChartEnabled)
@@ -24,8 +27,10 @@ end
 
 function MainPlugin:didMount()
 	self.PacketProfilerClick = self.props.PacketProfiler.Click:Connect(function()
-		self.SetPacketProfilerEnabled(not self.PacketProfilerEnabled:getValue())
-		Plugin:SetSetting("PacketProfilerEnabled", self.PacketProfilerEnabled:getValue())
+		local IsEnabled = not self.PacketProfilerEnabled:getValue()
+		self.SetPacketProfilerEnabled(IsEnabled)
+		self.OnPacketProfilerEnabled:Fire(IsEnabled)
+		Plugin:SetSetting("PacketProfilerEnabled", IsEnabled)
 	end)
 	self.PacketChartClick = self.props.PacketChart.Click:Connect(function()
 		local IsEnabled = not self.IsPacketChartEnabled
@@ -39,6 +44,7 @@ function MainPlugin:render()
 	return Roact.createFragment({
 		PacketProfiler = Roact.createElement(PacketProfiler, {
 			Enabled = self.PacketProfilerEnabled,
+			OnEnabled = self.OnPacketProfilerEnabled,
 			Signals = self.Signals,
 		}),
 		PacketChart = Roact.createElement(PacketChart, {

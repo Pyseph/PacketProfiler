@@ -29,6 +29,15 @@ local function GetRemoteColor()
 	local Color = Color3.fromHSV(HueValue, 0.5, 0.95)
 	return Color
 end
+local function GetSizeUnit(Value: number): (number, string)
+	if Value < 1000 then
+		return Value, "B"
+	elseif Value < 1000 * 1000 then
+		return Value / 1000, "KB"
+	else
+		return Value / (1000 * 1000), "MB"
+	end
+end
 
 local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME)
 local RemoteNameLabeler = nil
@@ -69,7 +78,7 @@ function DataChartItem:render()
 		}, {
 			["1Information"] = Roact.createElement("TextButton", {
 				Font = Enum.Font.SourceSans,
-				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.3fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
+				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %d%s", Arc.Color:ToHex(), Arc.Name, Arc.Percent, GetSizeUnit(Arc.DataSize)),
 				RichText = true,
 				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
 				TextSize = 14,

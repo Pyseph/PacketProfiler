@@ -80,16 +80,22 @@ function PacketFrames:init()
 	})
 	self.PacketsChanged, self.SetPacketsChanged = Roact.createBinding(self.PacketFrames)
 
-	function self.RemoteCallback(Remote, ...)
+	function self.RemoteCallback(Remote, FirstArgument, ...)
 		if not self.Enabled then
 			return
 		end
 
-		local PacketSize = GetRemotePacketSize(true, ...)
+		local PacketSize = 0
+		if RunService:IsClient() then
+			PacketSize = GetRemotePacketSize(FirstArgument, ...)
+		else
+			PacketSize = GetRemotePacketSize(...)
+		end
+
 		self.CurrentFrame.TotalSize += PacketSize
 		table.insert(self.CurrentFrame.Packets, {
 			Remote = Remote,
-			Data = {...},
+			Data = RunService:IsClient() and {...} or {select(2, ...)},
 			Size = PacketSize,
 		})
 	end
@@ -184,39 +190,45 @@ function PacketFrames:didMount()
 			Packets = {},
 		}
 
-		for _, Object in next, game:GetDescendants() do
-			if Object:IsA("RemoteEvent") then
-				Object[RemoteContext]:Connect(function(...)
-					self.RemoteCallback(Object, ...)
-				end)
-			end
-		end
-		game.DescendantAdded:Connect(function(Object)
-			if Object:IsA("RemoteEvent") then
-				Object[RemoteContext]:Connect(function(...)
-					self.RemoteCallback(Object, ...)
-				end)
-			end
-		end)
-
-		RunService.RenderStepped:Connect(function()
-			if not self.Enabled then
-				return
+		task.spawn(function()
+			if not self.props.Enabled:getValue() then
+				self.props.OnPacketProfilerEnabled:Wait()
 			end
 
-			self.PacketFrames:push(self.CurrentFrame)
-			self.SetPacketsChanged(self.PacketFrames)
-
-			self.CurrentFrame = {
-				Time = os.clock(),
-				TotalSize = 0,
-				Packets = {},
-			}
-
-			if self.MouseOver:getValue() then
-				local MousePosition = self.MousePosition:getValue()
-				self.UpdateMouseData(MousePosition.X, MousePosition.Y, self.SelectedFrameData:getValue().Selected)
+			for _, Object in next, game:GetDescendants() do
+				if Object:IsA("RemoteEvent") then
+					Object[RemoteContext]:Connect(function(...)
+						self.RemoteCallback(Object, ...)
+					end)
+				end
 			end
+			game.DescendantAdded:Connect(function(Object)
+				if Object:IsA("RemoteEvent") then
+					Object[RemoteContext]:Connect(function(...)
+						self.RemoteCallback(Object, ...)
+					end)
+				end
+			end)
+
+			RunService.RenderStepped:Connect(function()
+				if not self.Enabled then
+					return
+				end
+
+				self.PacketFrames:push(self.CurrentFrame)
+				self.SetPacketsChanged(self.PacketFrames)
+
+				self.CurrentFrame = {
+					Time = os.clock(),
+					TotalSize = 0,
+					Packets = {},
+				}
+
+				if self.MouseOver:getValue() then
+					local MousePosition = self.MousePosition:getValue()
+					self.UpdateMouseData(MousePosition.X, MousePosition.Y, self.SelectedFrameData:getValue().Selected)
+				end
+			end)
 		end)
 	end
 end
