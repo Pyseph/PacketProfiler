@@ -9,7 +9,7 @@ local function GetByteSize(Value: any): string
 	if ValueSize < 1000 then
 		return ValueSize .. "B"
 	else
-		return string.format("%.2fKB", ValueSize / 1000)
+		return string.format("%.3fKB", ValueSize / 1000)
 	end
 end
 

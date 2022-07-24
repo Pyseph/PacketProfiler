@@ -69,7 +69,7 @@ function DataChartItem:render()
 		}, {
 			["1Information"] = Roact.createElement("TextButton", {
 				Font = Enum.Font.SourceSans,
-				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.2fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
+				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %.3fKB", Arc.Color:ToHex(), Arc.Name, Arc.Percent, Arc.DataSize / 1000),
 				RichText = true,
 				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
 				TextSize = 14,
@@ -99,7 +99,8 @@ function DataChartItem:render()
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
 				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.new(1, -2, 0, 20),
+				Size = UDim2.new(1, -12, 0, 20),
+				ClipsDescendants = true,
 			}, {
 				Padding = Roact.createElement("UIPadding", {
 					PaddingBottom = UDim.new(0, 4),

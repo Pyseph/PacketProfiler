@@ -300,7 +300,7 @@ function PacketFrames:render()
 				}),
 				KBSent = Roact.createElement("TextLabel", {
 					Text = self.MouseFrameData:map(function(FrameData)
-						return string.format("%.2f KB sent", FrameData.TotalSize / 1000)
+						return string.format("%.3f KB sent", FrameData.TotalSize / 1000)
 					end),
 					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
 					TextXAlignment = Enum.TextXAlignment.Left,
