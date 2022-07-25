@@ -25,13 +25,13 @@ local VECTOR3_BYTES = 3*Float32
 
 local TypeByteSizes: {[string]: number} = {
 	EnumItem = Int32,
-	boolean = 1,
+	boolean = 2,
 	number = Float64+1,
 	UDim = Float32 + Int32,
 	UDim2 = 2*(Float32 + Int32),
 	Ray = 6*Float32,
-	Faces = 1,
-	Axes = 1,
+	Faces = 6,
+	Axes = 6,
 	BrickColor = Int32,
 	Color3 = COLOR3_BYTES,
 	Vector2 = 2*Float32,

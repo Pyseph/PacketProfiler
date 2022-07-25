@@ -19,6 +19,7 @@ local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
 local DATA_LIST_OFFSET = 20
 local REMOTE_NAME_MODULE_NAME = "RemoteName.profiler"
+local RICHTEXT_CHARS_LIMIT = 16383
 
 local IsEditMode = RunService:IsEdit()
 
@@ -94,33 +95,50 @@ function DataChartItem:render()
 					PaddingBottom = UDim.new(0, 4),
 				}),
 			}),
-			["2RemoteData"] = Roact.createElement("TextLabel", {
-				Font = Enum.Font.Code,
-				RichText = true,
-				Text = self.RemoteData:map(function(Visible)
-					return Visible and self.props.RemoteData or ""
-				end),
-				Visible = self.RemoteData,
-				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
-				TextSize = 12,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Top,
+			["2RemoteData"] = Roact.createElement("ScrollingFrame", {
 				AutomaticSize = Enum.AutomaticSize.Y,
+				AutomaticCanvasSize = Enum.AutomaticSize.X,
 				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
 				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.new(1, -12, 0, 20),
+				Size = UDim2.new(1, -12, 0, 0),
 				ClipsDescendants = true,
+				BorderSizePixel = 0,
+				ScrollBarImageColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBar),
+				ScrollBarThickness = 4,
+				ScrollingDirection = Enum.ScrollingDirection.X,
+				Visible = self.RemoteData,
 			}, {
-				Padding = Roact.createElement("UIPadding", {
-					PaddingBottom = UDim.new(0, 4),
-					PaddingLeft = UDim.new(0, 3),
-				}),
-				UICorner = Roact.createElement("UICorner", {
+				-- UICorners dont work on ScrollingFrames :(
+				--[[UICorner = Roact.createElement("UICorner", {
 					CornerRadius = UDim.new(0, 4),
-				}),
+				}),]]
 				UIStroke = Roact.createElement("UIStroke", {
 					Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				}),
+				Text = Roact.createElement("TextLabel", {
+					Font = Enum.Font.Code,
+					RichText = true,
+					Text = self.RemoteData:map(function()
+						if #self.props.RemoteData < RICHTEXT_CHARS_LIMIT then
+							return self.props.RemoteData
+						else
+							return (string.gsub((string.gsub(self.props.RemoteData, "<font color=\"#%w-\">", "")), "</font>", ""))
+						end
+					end),
+					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+					AutomaticSize = Enum.AutomaticSize.XY,
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 1),
+					ClipsDescendants = true,
+				}, {
+					Padding = Roact.createElement("UIPadding", {
+						PaddingBottom = UDim.new(0, 8),
+						PaddingRight = UDim.new(0, 4),
+					}),
 				}),
 			}),
 			["3Separator"] = Roact.createElement("Frame", {
@@ -128,7 +146,7 @@ function DataChartItem:render()
 				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
 				BorderSizePixel = 0,
 				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.new(1, 0, 0, 1),
+				Size = UDim2.new(1, -12, 0, 1),
 				Visible = self.RemoteData:map(function(Visible)
 					return not Visible
 				end),
