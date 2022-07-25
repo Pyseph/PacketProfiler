@@ -34,7 +34,7 @@ local TypeByteSizes: {[string]: number} = {
 	Axes = 6,
 	BrickColor = Int32,
 	Color3 = COLOR3_BYTES,
-	Vector2 = 2*Float32,
+	Vector2 = 2*Float32 + 1,
 	Vector3 = VECTOR3_BYTES,
 	-- It's unclear how instances are sent, but in binary-storage format they're stored with
 	-- 'Referents', which can be found in the binary-storage documentation above.
