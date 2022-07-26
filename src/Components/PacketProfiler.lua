@@ -21,8 +21,9 @@ local function TopbarButton(props)
 	return Roact.createElement("TextButton", {
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		Size = UDim2.fromOffset(0, TOPBAR_HEIGHT),
-		BackgroundColor3 = props.Theme:GetColor("ScrollBarBackground"),
-		TextSize = TOPBAR_HEIGHT + 2,
+		BackgroundColor3 = props.Theme:GetColor("Item"),
+		TextSize = TOPBAR_HEIGHT + 1,
+		BorderSizePixel = 0,
 		Font = Enum.Font.Code,
 		Text = props.Text,
 		AutomaticSize = Enum.AutomaticSize.X,
@@ -135,8 +136,11 @@ function ProfilerComponent:init()
 	self.PacketProfilerPaused, self.SetPacketProfilerPaused = Roact.createBinding(false)
 	self.OnPacketProfilerPaused = Signal.new()
 
-	function self.Pause(IsPaused)
+	self.OnPacketProfilerPaused:Connect(function(IsPaused)
 		self.SetPacketProfilerPaused(IsPaused)
+	end)
+
+	function self.Pause(IsPaused)
 		self.OnPacketProfilerPaused:Fire(IsPaused)
 	end
 end
@@ -159,8 +163,9 @@ function ProfilerComponent:render()
 		}, {
 			Background = StudioTheme(function(Theme)
 				return Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor("MainBackground"),
-					BorderSizePixel = 0,
+					BackgroundColor3 = Theme:GetColor("Light"),
+					BorderSizePixel = 1,
+					BorderColor3 = Theme:GetColor("Border"),
 					Size = UDim2.new(1, 0, 0, 50),
 					Position = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 				}, {
@@ -175,7 +180,7 @@ function ProfilerComponent:render()
 			end),
 			Topbar = StudioTheme(function(Theme)
 				return Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
+					BackgroundColor3 = Theme:GetColor("Item"),
 					BorderSizePixel = 0,
 					ZIndex = 2,
 					Size = UDim2.new(1, 0, 0, TOPBAR_HEIGHT),

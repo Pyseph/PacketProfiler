@@ -8,11 +8,18 @@ if Packages.IsPlugin then
 	local StudioSettings = settings():GetService("Studio")
 	return {
 		Theme = {
-			GetColor = function(_, ColorEnumName: string): Color3
-				return StudioSettings:GetColor(Enum.StudioStyleGuideColor[ColorEnumName])
+			GetColor = function(_, ItemName: string): Color3
+				-- This loop is necessary to prevent lint errors. See https://github.com/Roblox/luau/issues/586
+				for _, EnumItem in pairs(Enum.StudioStyleGuideColor:GetEnumItems()) do
+					if EnumItem.Name == ItemName then
+						return StudioSettings.Theme:GetColor(EnumItem)
+					end
+				end
+				error(tostring(ItemName) .. "is not a valid member of \"Enum.StudioStyleGuideColor\"")
+				--return StudioSettings:GetColor((Enum.StudioStyleGuideColor)[ColorEnumName])
 			end
 		},
-		ThemeChanged = StudioSettings.Theme.ThemeChanged,
+		ThemeChanged = StudioSettings.ThemeChanged,
 	}
 else
 	--[[

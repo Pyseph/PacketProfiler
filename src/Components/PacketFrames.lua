@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
 
 local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
@@ -14,6 +15,7 @@ local MAX_FRAMES = 256
 local TOOLTIP_WIDTH = 200
 -- https://developer.roblox.com/en-us/api-reference/property/Mouse/Icon#:~:text=The%20default%20mouse%20image%20is,up%2017x24%20pixels%20of%20space.
 local TOOLTIP_HEIGHT_OFFSET = 24
+local GuiInset = GuiService:GetGuiInset()
 
 local PacketFrames = Roact.Component:extend("PacketFrames")
 local PacketFrame = Roact.Component:extend("PacketFrame")
@@ -23,7 +25,7 @@ local RemoteContext = RunService:IsClient() and "OnClientEvent" or "OnServerEven
 
 function PacketFrame:render()
 	local props = self.props
-	return Roact.createElement("Frame", {
+	return Roact.createElement("ImageLabel", {
 		Size = props.PacketsChanged:map(function(Packets)
 			local FrameData = Packets[props.Index]
 			if not FrameData then
@@ -39,9 +41,11 @@ function PacketFrame:render()
 			self.PreviousFrameSize = FrameSize
 			return FrameSize
 		end),
+		Image = "rbxassetid://10370998310",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(1 - (props.Index / MAX_FRAMES), 1),
 		BorderSizePixel = 0,
+		--[[
 		BackgroundColor3 = props.PacketsChanged:map(function(Packets)
 			local FrameData = Packets[props.Index]
 			if not FrameData then
@@ -57,6 +61,7 @@ function PacketFrame:render()
 			self.PreviousFrameColor = FrameColor
 			return FrameColor
 		end),
+		--]]
 		Visible = props.PacketsChanged:map(function(Packets)
 			local IsVisible = Packets[props.Index] ~= nil
 			if IsVisible == self.PreviousIsVisible then
@@ -102,7 +107,7 @@ function PacketFrames:init()
 
 	function self.InputBegan(_, Input: InputObject)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			local FrameData = self.UpdateMouseData(Input.Position.X, Input.Position.Y, true)
+			local FrameData = self.UpdateMouseData(Input.Position.X, Input.Position.Y + GuiInset.Y, true)
 			if FrameData then
 				self.props.Signals.ProfilerFrameSelected:Fire(FrameData)
 			end
@@ -286,13 +291,13 @@ function PacketFrames:render()
 			end),
 			BackgroundColor3 = Color3.fromHex("#e8e8e8"),
 		}),
-		FrameTooltip = StudioTheme(function(Theme: StudioTheme)
+		FrameTooltip = StudioTheme(function(Theme)
 			return Roact.createElement("Frame", {
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = Theme:GetColor("Dropdown"),
 				BorderColor3 = Theme:GetColor("Border"),
 				Position = self.MousePosition:map(function(MousePosition)
-					return UDim2.fromOffset(MousePosition.X, MousePosition.Y + TOOLTIP_HEIGHT_OFFSET)
+					return UDim2.fromOffset(MousePosition.X, MousePosition.Y + (TOOLTIP_HEIGHT_OFFSET / 2))
 				end),
 				Visible = self.MouseOver,
 				ZIndex = 2,
@@ -324,7 +329,7 @@ function PacketFrames:render()
 				}),
 			})
 		end),
-		EditModeNotifier = StudioTheme(function(Theme: StudioTheme)
+		EditModeNotifier = StudioTheme(function(Theme)
 			return Roact.createElement("TextLabel", {
 				Size = UDim2.fromScale(1, 1),
 				Position = UDim2.fromScale(0.5, 0.5),

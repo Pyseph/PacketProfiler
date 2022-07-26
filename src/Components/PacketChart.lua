@@ -70,7 +70,7 @@ function DataChartItem:init()
 end
 function DataChartItem:render()
 	local Arc = self.props.Arc
-	return StudioTheme(function(Theme: StudioTheme)
+	return StudioTheme(function(Theme)
 		return Roact.createElement("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 22),
@@ -261,7 +261,7 @@ function PacketChart:render()
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}
 	})[Packages.IsPlugin and "Plugin" or "Client"], {
-		Holder = StudioTheme(function(Theme: StudioTheme)
+		Holder = StudioTheme(function(Theme)
 			return Roact.createElement("Frame", {
 				BackgroundTransparency = 1,
 				AnchorPoint = Packages.IsPlugin and Vector2.new() or Vector2.new(1, 0),
