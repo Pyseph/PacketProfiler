@@ -1,8 +1,9 @@
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
-local Packages = PacketProfiler.Packages
+local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
+local Modules = PacketProfiler.Modules
+local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Roact)
+local Roact = require(Packages.Directory.Roact)
 local StudioSettings = require(Components.StudioSettings)
 
 local StudioThemeProvider = Roact.Component:extend("StudioThemeProvider")

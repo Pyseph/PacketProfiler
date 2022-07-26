@@ -1,7 +1,9 @@
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
+local Script = Plugin:FindFirstChildOfClass("Script")
+local Modules = Script.Modules
+local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Roact)
+local Roact = require(Packages.Directory.Roact)
 
 local StudioWidget = Roact.Component:extend("StudioWidget")
 

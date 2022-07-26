@@ -1,5 +1,5 @@
 {
-	"name": "Plugin Testing",
+	"name": "PacketProfiler Plugin Testing",
 	"tree": {
 		"$className": "DataModel",
 		"PluginDebugService": {
@@ -7,13 +7,18 @@
 			"user_PacketProfilerTest.rbxm": {
 				"$className": "Plugin",
 				"PacketProfiler": {
-					"$path": "src",
+					"$path": "build/main.server.lua",
+					"Components": {
+						"$path": "src/Components"
+					},
+					"Modules": {
+						"$path": "src/Modules"
+					},
 					"Packages": {
 						"$path": "Packages"
 					}
 				}
 			}
 		}
-	},
-	"servePort": 38700
+	}
 }

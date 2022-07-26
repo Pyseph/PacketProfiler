@@ -2,16 +2,17 @@ local Players = game:GetService("Players")
 local TextService = game:GetService("TextService")
 local RunService = game:GetService("RunService")
 
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
-local Packages = PacketProfiler.Packages
+local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
+local Modules = PacketProfiler.Modules
+local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Roact)
+local Roact = require(Packages.Directory.Roact)
 local StudioTheme = require(Components.StudioTheme)
 local PacketFrames = require(Components.PacketFrames)
-local Signal = require(Packages.Signal)
+local Signal = require(Packages.Directory.Signal)
 
-local TargetGui = RunService:IsStudio() and game:GetService("CoreGui") or Players.LocalPlayer.PlayerGui
+local TargetGui = Packages.IsPlugin and game:GetService("CoreGui") or Players.LocalPlayer.PlayerGui
 
 local TOPBAR_HEIGHT = 10
 local IsEditMode = not RunService:IsRunning()
