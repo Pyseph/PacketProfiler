@@ -1,5 +1,6 @@
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Modules = Plugin.PacketProfiler.Modules
+local Script = Plugin:FindFirstChildOfClass("Script")
+local Modules = Script.Modules
 local Packages = require(Modules.Packages)
 
 local Roact = require(Packages.Directory.Roact)
