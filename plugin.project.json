@@ -1,7 +1,8 @@
 {
 	"name": "packetprofiler",
 	"tree": {
-		"$path": "build/init.lua",
+		"$path": "build/init.server.lua",
+		"$className": "ModuleScript",
 		"src": {
 			"$path": "src"
 		},
