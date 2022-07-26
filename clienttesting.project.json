@@ -1,11 +1,11 @@
 {
-	"name": "Plugin Testing",
+	"name": "Client Testing",
 	"tree": {
 		"$className": "DataModel",
-		"PluginDebugService": {
-			"$className": "PluginDebugService",
-			"user_PacketProfilerTest.rbxm": {
-				"$className": "Plugin",
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
 				"PacketProfiler": {
 					"$path": "src",
 					"Packages": {

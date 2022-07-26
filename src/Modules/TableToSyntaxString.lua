@@ -1,8 +1,9 @@
-local Settings = settings()
-local Studio = Settings:GetService("Studio")
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Modules = PacketProfiler.Modules
+local Components = PacketProfiler.Components
 
-local Modules = script.Parent
 local GetRemotePacketSize = require(Modules.PacketSizeCounter)
+local StudioSettings = require(Components.StudioSettings)
 
 local function GetByteSize(Value: any): string
 	local ValueSize = GetRemotePacketSize(true, Value)
@@ -49,7 +50,7 @@ end
 
 local function UpdateStyleGuideColors()
 	for Name, ColorEnum in pairs(StyleGuideColorEnums) do
-		StyleGuideColors[Name] = "#" .. Studio.Theme:GetColor(ColorEnum):ToHex()
+		StyleGuideColors[Name] = "#" .. StudioSettings.Theme:GetColor(ColorEnum):ToHex()
 	end
 
 	for Name in pairs(c) do
@@ -57,7 +58,7 @@ local function UpdateStyleGuideColors()
 	end
 end
 UpdateStyleGuideColors()
-Studio.ThemeChanged:Connect(UpdateStyleGuideColors)
+StudioSettings.ThemeChanged:Connect(UpdateStyleGuideColors)
 
 local function GetHierarchy(Object)
 	local Result = ""

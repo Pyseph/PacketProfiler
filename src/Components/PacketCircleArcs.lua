@@ -1,5 +1,5 @@
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Packages = PacketProfiler.Packages
 
 local Roact = require(Packages.Roact)
 

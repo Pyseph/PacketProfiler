@@ -1,23 +1,26 @@
-local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 local TextService = game:GetService("TextService")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
-local Components = Plugin.PacketProfiler.Components
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Packages = PacketProfiler.Packages
+local Components = PacketProfiler.Components
 
 local Roact = require(Packages.Roact)
 local StudioTheme = require(Components.StudioTheme)
 local PacketFrames = require(Components.PacketFrames)
 local Signal = require(Packages.Signal)
 
-local TOPBAR_HEIGHT = 10
-local IsEditMode = RunService:IsEdit()
+local TargetGui = RunService:IsStudio() and game:GetService("CoreGui") or Players.LocalPlayer.PlayerGui
 
-local function TopbarText(props)
+local TOPBAR_HEIGHT = 10
+local IsEditMode = not RunService:IsRunning()
+
+local function TopbarButton(props)
 	return Roact.createElement("TextButton", {
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
+		Size = UDim2.fromOffset(0, TOPBAR_HEIGHT),
+		BackgroundColor3 = props.Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
 		TextSize = TOPBAR_HEIGHT + 2,
 		Font = Enum.Font.Code,
 		Text = props.Text,
@@ -28,7 +31,7 @@ local function TopbarText(props)
 	})
 end
 
-local function TopbarButton(props)
+local function TopbarOptionsButton(props)
 	return Roact.createElement("TextButton", {
 		Text = props.ButtonName,
 		TextXAlignment = Enum.TextXAlignment.Right,
@@ -60,7 +63,7 @@ function TopbarButtonsGroup:render()
 	end
 
 	for _, Data in next, props.Options do
-		table.insert(Buttons, TopbarButton({
+		table.insert(Buttons, TopbarOptionsButton({
 			ButtonName = Data.Name,
 			OnClick = Data.Callback,
 			Theme = props.Theme,
@@ -121,9 +124,9 @@ function TopbarButtonsGroup:render()
 	})
 end
 
-local PacketProfiler = Roact.Component:extend("PacketProfiler")
+local ProfilerComponent = Roact.Component:extend("PacketProfiler")
 
-function PacketProfiler:init()
+function ProfilerComponent:init()
 	self:setState({
 		MaxFrameSize = 1*1000,
 	})
@@ -131,28 +134,21 @@ function PacketProfiler:init()
 	self.PacketProfilerPaused, self.SetPacketProfilerPaused = Roact.createBinding(false)
 	self.OnPacketProfilerPaused = Signal.new()
 
-	function self.Pause()
-		local IsPaused = not self.PacketProfilerPaused:getValue()
+	function self.Pause(IsPaused)
 		self.SetPacketProfilerPaused(IsPaused)
 		self.OnPacketProfilerPaused:Fire(IsPaused)
 	end
 end
 
-function PacketProfiler:didMount()
-	self.InputBeganConnection = UserInputService.InputBegan:Connect(function(Input)
-		if UserInputService:IsKeyDown(Enum.KeyCode.Z) and Input.KeyCode == Enum.KeyCode.P then
-			self.Pause()
-		end
-	end)
-
-	self.OnPacketProfilerPaused:Connect(function(Paused)
-		self.SetPacketProfilerPaused(Paused)
+function ProfilerComponent:didMount()
+	self.props.Signals.ProfilerPaused:Connect(function(IsPaused)
+		self.Pause(IsPaused)
 	end)
 end
 
-function PacketProfiler:render()
+function ProfilerComponent:render()
 	return Roact.createElement(Roact.Portal, {
-		target = CoreGui,
+		target = TargetGui,
 	}, {
 		PacketProfiler = Roact.createElement("ScreenGui", {
 			Enabled = self.props.Enabled,
@@ -187,14 +183,13 @@ function PacketProfiler:render()
 						FillDirection = Enum.FillDirection.Horizontal,
 						HorizontalAlignment = Enum.HorizontalAlignment.Left,
 						VerticalAlignment = Enum.VerticalAlignment.Center,
-						SortOrder = Enum.SortOrder.LayoutOrder,
 						Padding = UDim.new(0, 5),
 					}),
-					Title = Roact.createElement(TopbarText, {
+					["1Title"] = Roact.createElement(TopbarButton, {
 						Text = "PacketProfiler",
 						Theme = Theme,
 					}),
-					MaxKBScale = Roact.createElement(TopbarButtonsGroup, {
+					["2MaxKBScale"] = Roact.createElement(TopbarButtonsGroup, {
 						Theme = Theme,
 						Text = "Max KB scale",
 						Options = {
@@ -248,12 +243,14 @@ function PacketProfiler:render()
 							},
 						},
 					}),
-					PausedLabel = Roact.createElement(TopbarText, {
+					["3PausedLabel"] = Roact.createElement(TopbarButton, {
 						Text = self.PacketProfilerPaused:map(function(IsPaused)
 							return IsPaused and "[Paused]" or "[Running]"
 						end),
 						Theme = Theme,
-						OnClick = self.Pause,
+						OnClick = function()
+							self.props.Signals.ProfilerPaused:Fire(not self.PacketProfilerPaused:getValue())
+						end,
 					})
 				})
 			end),
@@ -261,4 +258,4 @@ function PacketProfiler:render()
 	})
 end
 
-return PacketProfiler
+return ProfilerComponent

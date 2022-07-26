@@ -1,15 +1,14 @@
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
-local Components = Plugin.PacketProfiler.Components
-local Modules = Plugin.PacketProfiler.Modules
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Packages = PacketProfiler.Packages
+local Components = PacketProfiler.Components
+local Modules = PacketProfiler.Modules
 
 local Roact = require(Packages.Roact)
 local Signal = require(Packages.Signal)
 
-local StudioWidget = require(Components.StudioWidget)
 local StudioTheme = require(Components.StudioTheme)
 local PacketCircleArcs = require(Components.PacketCircleArcs)
 
@@ -21,7 +20,7 @@ local DATA_LIST_OFFSET = 20
 local REMOTE_NAME_MODULE_NAME = "RemoteName.profiler"
 local RICHTEXT_CHARS_LIMIT = 16383
 
-local IsEditMode = RunService:IsEdit()
+local IsEditMode = not RunService:IsRunning()
 
 local HueValue = 0
 local function GetRemoteColor()
@@ -123,7 +122,12 @@ function DataChartItem:render()
 						if #self.props.RemoteData < RICHTEXT_CHARS_LIMIT then
 							return self.props.RemoteData
 						else
-							return (string.gsub((string.gsub(self.props.RemoteData, "<font color=\"#%w-\">", "")), "</font>", ""))
+							local Result = (string.gsub((string.gsub(self.props.RemoteData, "<font color=\"#%w-\">", "")), "</font>", ""))
+							if #Result > RICHTEXT_CHARS_LIMIT then
+								return "<b><font color=\"#eb3434\">[Data is too long to be displayed]</font></b>"
+							end
+
+							return Result
 						end
 					end),
 					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
@@ -182,10 +186,12 @@ local PacketChart = Roact.Component:extend("PacketChart")
 
 function PacketChart:init()
 	self.ArcsUpdated = Signal.new()
+	self.ChartEnabled, self.SetChartEnabled = Roact.createBinding(false)
 
 	self:setState({
 		Arcs = {},
 	})
+
 end
 
 function PacketChart:didMount()
@@ -229,96 +235,115 @@ function PacketChart:didMount()
 			Arcs = Arcs,
 		})
 	end)
+	self.props.Signals.ProfilerPaused:Connect(function(IsPaused)
+		self.SetChartEnabled(IsPaused)
+	end)
+	self.props.OnEnabled:Connect(function(IsEnabled)
+		self.SetChartEnabled(IsEnabled)
+	end)
 end
 
+local IsStudio = RunService:IsStudio()
 function PacketChart:render()
-	return Roact.createElement(StudioWidget, {
-		WidgetId = "PacketChart",
-		WidgetTitle = "Packet Chart",
-		InitialDockState = Enum.InitialDockState.Float,
-		Enabled = self.props.Enabled,
-		OnEnabled = self.props.OnEnabled,
-		DefaultSize = Vector2.new(350, 200),
-		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-		MinimumSize = Vector2.new(300, 100),
-	}, {
-		Background = StudioTheme(function(Theme: StudioTheme)
+	return Roact.createElement(IsStudio and require(Components.StudioWidget) or "ScreenGui", ({
+		Studio = {
+			WidgetId = "PacketChart",
+			WidgetTitle = "Packet Chart",
+			InitialDockState = Enum.InitialDockState.Float,
+			Enabled = self.props.Enabled,
+			OnEnabled = self.props.OnEnabled,
+			DefaultSize = Vector2.new(350, 200),
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+			MinimumSize = Vector2.new(300, 100),
+		},
+		Client = {
+			IgnoreGuiInset = true,
+			Enabled = self.ChartEnabled,
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		}
+	})[IsStudio and "Studio" or "Client"], {
+		Holder = StudioTheme(function(Theme: StudioTheme)
 			return Roact.createElement("Frame", {
-				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
-				BorderSizePixel = 0,
-				ZIndex = 0,
-				Size = UDim2.fromScale(1, 1),
-			})
-		end),
-		BackgroundCircle = Roact.createElement("Frame", {
-			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(PIE_CHART_SIZE, PIE_CHART_SIZE),
-			Visible = not IsEditMode,
-			Position = UDim2.fromOffset(4, 4),
-		}, {
-			-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
-			BackgroundUI = StudioTheme(function(Theme: StudioTheme)
-				return Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
-					Size = UDim2.fromScale(1, 1),
-					Visible = #self.state.Arcs > 0,
-				}, {
-					UICorner = Roact.createElement("UICorner", {
-						CornerRadius = UDim.new(0, 4),
-					}),
-					UIStroke = Roact.createElement("UIStroke", {
-						Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-					}),
-				})
-			end),
-			PacketCircle = Roact.createElement(PacketCircleArcs, {
-				Arcs = self.state.Arcs,
-			}),
-		}),
-		DataList = StudioTheme(function(Theme: StudioTheme)
-			return Roact.createElement("ScrollingFrame", {
-				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
-				Size = UDim2.new(1, -PIE_CHART_SIZE - DATA_LIST_OFFSET, 1, 0),
-				Position = UDim2.fromScale(1, 0),
-				AnchorPoint = Vector2.new(1, 0),
-				AutomaticCanvasSize = Enum.AutomaticSize.Y,
-				CanvasSize = UDim2.new(),
-				BorderSizePixel = 0,
-				Visible = not IsEditMode,
-
-				BottomImage = "rbxassetid://5234388158",
-				MidImage = "rbxassetid://5234388158",
-				TopImage = "rbxassetid://5234388158",
-				ScrollBarImageColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Light),
-				ScrollBarThickness = 6,
-			}, {
-				UIListLayout = Roact.createElement("UIListLayout", {
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					FillDirection = Enum.FillDirection.Vertical,
-					HorizontalAlignment = Enum.HorizontalAlignment.Left,
-					VerticalAlignment = Enum.VerticalAlignment.Top,
-				}),
-				Items = Roact.createElement(DataChartItems, {
-					Arcs = self.state.Arcs,
-				})
-			})
-		end),
-		EditModeNotifier = StudioTheme(function(Theme: StudioTheme)
-			return Roact.createElement("TextLabel", {
-				Size = UDim2.fromScale(1, 1),
-				Position = UDim2.fromScale(0.5, 0.5),
-				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
-				Text = "Start session to begin",
-				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.WarningText),
-				TextSize = 20,
-				Font = Enum.Font.SourceSans,
-				TextXAlignment = Enum.TextXAlignment.Center,
-				TextYAlignment = Enum.TextYAlignment.Center,
-				Visible = IsEditMode,
+				AnchorPoint = IsStudio and Vector2.new() or Vector2.new(1, 0),
+				Position = IsStudio and UDim2.new() or UDim2.new(1, 0, 0, 60),
+				Size = IsStudio and UDim2.fromScale(1, 1) or UDim2.fromOffset(450, 180),
+				AutomaticSize = IsStudio and Enum.AutomaticSize.None or Enum.AutomaticSize.Y,
+			}, {
+				Background = Roact.createElement("Frame", {
+					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
+					BorderSizePixel = 0,
+					ZIndex = 0,
+					Size = UDim2.fromScale(1, 1),
+				}),
+				BackgroundCircle = Roact.createElement("Frame", {
+					BackgroundTransparency = 1,
+					Size = UDim2.fromOffset(PIE_CHART_SIZE, PIE_CHART_SIZE),
+					Visible = not IsEditMode,
+					Position = UDim2.fromOffset(4, 4),
+				}, {
+					-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
+					BackgroundUI = Roact.createElement("Frame", {
+						BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+						Size = UDim2.fromScale(1, 1),
+						Visible = #self.state.Arcs > 0,
+					}, {
+						UICorner = Roact.createElement("UICorner", {
+							CornerRadius = UDim.new(0, 4),
+						}),
+						UIStroke = Roact.createElement("UIStroke", {
+							Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						}),
+					}),
+					PacketCircle = Roact.createElement(PacketCircleArcs, {
+						Arcs = self.state.Arcs,
+					}),
+				}),
+				DataList = Roact.createElement("ScrollingFrame", {
+					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
+					Size = UDim2.new(1, -PIE_CHART_SIZE - DATA_LIST_OFFSET, 1, 0),
+					Position = UDim2.fromScale(1, 0),
+					AnchorPoint = Vector2.new(1, 0),
+					AutomaticCanvasSize = Enum.AutomaticSize.Y,
+					CanvasSize = UDim2.new(),
+					BorderSizePixel = 0,
+					Visible = not IsEditMode,
+
+					BottomImage = "rbxassetid://5234388158",
+					MidImage = "rbxassetid://5234388158",
+					TopImage = "rbxassetid://5234388158",
+					ScrollBarImageColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Light),
+					ScrollBarThickness = 6,
+				}, {
+					UIListLayout = Roact.createElement("UIListLayout", {
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						FillDirection = Enum.FillDirection.Vertical,
+						HorizontalAlignment = Enum.HorizontalAlignment.Left,
+						VerticalAlignment = Enum.VerticalAlignment.Top,
+						[Roact.Change.AbsoluteContentSize] = function(Rbx)
+							Rbx.Parent.CanvasSize = UDim2.fromOffset(0, Rbx.AbsoluteContentSize.Y)
+						end
+					}),
+					Items = Roact.createElement(DataChartItems, {
+						Arcs = self.state.Arcs,
+					})
+				}),
+				EditModeNotifier = Roact.createElement("TextLabel", {
+					Size = UDim2.fromScale(1, 1),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					Text = "Start session to begin",
+					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.WarningText),
+					TextSize = 20,
+					Font = Enum.Font.SourceSans,
+					TextXAlignment = Enum.TextXAlignment.Center,
+					TextYAlignment = Enum.TextYAlignment.Center,
+					Visible = IsEditMode,
+				}),
 			})
-		end),
+		end)
 	})
 end
 

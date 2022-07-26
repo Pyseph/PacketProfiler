@@ -1,9 +1,9 @@
 local RunService = game:GetService("RunService")
 
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
-local Components = Plugin.PacketProfiler.Components
-local Modules = Plugin.PacketProfiler.Modules
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Packages = PacketProfiler.Packages
+local Components = PacketProfiler.Components
+local Modules = PacketProfiler.Modules
 
 local Roact = require(Packages.Roact)
 local StudioTheme = require(Components.StudioTheme)
@@ -18,7 +18,7 @@ local TOOLTIP_HEIGHT_OFFSET = 24
 local PacketFrames = Roact.Component:extend("PacketFrames")
 local PacketFrame = Roact.Component:extend("PacketFrame")
 
-local IsEditMode = RunService:IsEdit()
+local IsEditMode = not RunService:IsRunning()
 local RemoteContext = RunService:IsClient() and "OnClientEvent" or "OnServerEvent"
 
 function PacketFrame:render()

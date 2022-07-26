@@ -1,12 +1,11 @@
-local Settings = settings()
-
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Packages = Plugin.PacketProfiler.Packages
+local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local Packages = PacketProfiler.Packages
+local Components = PacketProfiler.Components
 
 local Roact = require(Packages.Roact)
+local StudioSettings = require(Components.StudioSettings)
 
 local StudioThemeProvider = Roact.Component:extend("StudioThemeProvider")
-local StudioSettings = Settings.Studio
 
 function StudioThemeProvider:init()
 	self:setState({

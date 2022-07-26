@@ -1,3 +1,8 @@
+local RunService = game:GetService("RunService")
+if not RunService:IsStudio() then
+	return
+end
+
 local Plugin = script:FindFirstAncestorOfClass("Plugin")
 
 local Components = Plugin.PacketProfiler.Components
