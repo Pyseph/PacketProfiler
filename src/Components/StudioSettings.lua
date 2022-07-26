@@ -1,12 +1,10 @@
-local RunService = game:GetService("RunService")
+local PacketProfiler = script.Parent.Parent
+local Modules = PacketProfiler.Modules
+local Packages = require(Modules.Packages)
 
+local Signal = require(Packages.Directory.Signal)
 
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
-local Packages = PacketProfiler.Packages
-
-local Signal = require(Packages.Signal)
-
-if RunService:IsStudio() then
+if Packages.IsPlugin then
 	return settings():GetService("Studio")
 else
 	--[[
@@ -138,7 +136,7 @@ else
 
 	return {
 		Theme = {
-			GetColor = function(_, StudioStyleGuideColorEnum)
+			GetColor = function(_, StudioStyleGuideColorEnum: EnumItem): Color3
 				return Colors[StudioStyleGuideColorEnum.Name]
 			end,
 		},

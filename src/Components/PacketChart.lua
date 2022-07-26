@@ -1,13 +1,13 @@
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
-local Packages = PacketProfiler.Packages
+local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
 local Modules = PacketProfiler.Modules
+local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Roact)
-local Signal = require(Packages.Signal)
+local Roact = require(Packages.Directory.Roact)
+local Signal = require(Packages.Directory.Signal)
 
 local StudioTheme = require(Components.StudioTheme)
 local PacketCircleArcs = require(Components.PacketCircleArcs)
@@ -243,10 +243,9 @@ function PacketChart:didMount()
 	end)
 end
 
-local IsStudio = RunService:IsStudio()
 function PacketChart:render()
-	return Roact.createElement(IsStudio and require(Components.StudioWidget) or "ScreenGui", ({
-		Studio = {
+	return Roact.createElement(Packages.IsPlugin and require(Components.StudioWidget) or "ScreenGui", ({
+		Plugin = {
 			WidgetId = "PacketChart",
 			WidgetTitle = "Packet Chart",
 			InitialDockState = Enum.InitialDockState.Float,
@@ -261,14 +260,14 @@ function PacketChart:render()
 			Enabled = self.ChartEnabled,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}
-	})[IsStudio and "Studio" or "Client"], {
+	})[Packages.IsPlugin and "Plugin" or "Client"], {
 		Holder = StudioTheme(function(Theme: StudioTheme)
 			return Roact.createElement("Frame", {
 				BackgroundTransparency = 1,
-				AnchorPoint = IsStudio and Vector2.new() or Vector2.new(1, 0),
-				Position = IsStudio and UDim2.new() or UDim2.new(1, 0, 0, 60),
-				Size = IsStudio and UDim2.fromScale(1, 1) or UDim2.fromOffset(450, 180),
-				AutomaticSize = IsStudio and Enum.AutomaticSize.None or Enum.AutomaticSize.Y,
+				AnchorPoint = Packages.IsPlugin and Vector2.new() or Vector2.new(1, 0),
+				Position = Packages.IsPlugin and UDim2.new() or UDim2.new(1, 0, 0, 60),
+				Size = Packages.IsPlugin and UDim2.fromScale(1, 1) or UDim2.fromOffset(450, 180),
+				AutomaticSize = Packages.IsPlugin and Enum.AutomaticSize.None or Enum.AutomaticSize.Y,
 			}, {
 				Background = Roact.createElement("Frame", {
 					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),

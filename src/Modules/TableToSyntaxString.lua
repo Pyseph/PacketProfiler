@@ -1,4 +1,4 @@
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local PacketProfiler = script.Parent.Parent
 local Modules = PacketProfiler.Modules
 local Components = PacketProfiler.Components
 
@@ -49,8 +49,9 @@ local function Syntax(Value, Type)
 end
 
 local function UpdateStyleGuideColors()
+	local Theme = StudioSettings.Theme
 	for Name, ColorEnum in pairs(StyleGuideColorEnums) do
-		StyleGuideColors[Name] = "#" .. StudioSettings.Theme:GetColor(ColorEnum):ToHex()
+		StyleGuideColors[Name] = "#" .. Theme:GetColor(ColorEnum):ToHex()
 	end
 
 	for Name in pairs(c) do

@@ -1,5 +1,5 @@
 {
-	"name": "Client Testing",
+	"name": "packetprofiler",
 	"tree": {
 		"$className": "DataModel",
 		"StarterPlayer": {
@@ -7,13 +7,18 @@
 			"StarterPlayerScripts": {
 				"$className": "StarterPlayerScripts",
 				"PacketProfiler": {
-					"$path": "src",
+					"$path": "build/packagedev.client.lua",
+					"Components": {
+						"$path": "src/Components"
+					},
+					"Modules": {
+						"$path": "src/Modules"
+					},
 					"Packages": {
 						"$path": "Packages"
 					}
 				}
 			}
 		}
-	},
-	"servePort": 38700
+	}
 }

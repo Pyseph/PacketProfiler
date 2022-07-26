@@ -1,19 +1,17 @@
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local PacketProfiler = script:FindFirstAncestor("PacketProfiler")
+local PacketProfiler = script.Parent.Parent
 local Plugin: Plugin? = PacketProfiler:FindFirstAncestorOfClass("Plugin")
 local Components = PacketProfiler.Components
-local Packages = PacketProfiler.Packages
+local Modules = PacketProfiler.Modules
+local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Roact)
-local Signal = require(Packages.Signal)
+local Roact = require(Packages.Directory.Roact)
+local Signal = require(Packages.Directory.Signal)
 
 Roact.setGlobalConfig({
 	elementTracing = true,
 })
-
-local IsStudio = RunService:IsStudio()
 
 local MainPlugin = Roact.Component:extend("MainPlugin")
 
@@ -24,7 +22,7 @@ function MainPlugin:init()
 	self.IsPacketChartEnabled = if Plugin then Plugin:GetSetting("PacketChartEnabled") == true else false
 	self.OnPacketChartEnabled = Signal.new()
 
-	if IsStudio then
+	if Packages.IsPlugin then
 		self.props.PacketProfiler:SetActive(self.PacketProfilerEnabled:getValue())
 		self.props.PacketChart:SetActive(self.IsPacketChartEnabled)
 	end
@@ -55,7 +53,7 @@ function MainPlugin:init()
 end
 
 function MainPlugin:didMount()
-	if IsStudio then
+	if Packages.IsPlugin then
 		self.PacketProfilerClick = self.props.PacketProfiler.Click:Connect(self.OnPacketProfilerClicked)
 		self.PacketChartClick = self.props.PacketChart.Click:Connect(self.OnPacketChartClicked)
 	else
