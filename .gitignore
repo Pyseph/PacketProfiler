@@ -1,6 +1,17 @@
-/sourcemap.json
-/Icon.png
-/build.rbxm
-/plugin.rbxm
-/.vscode
+# Rojo
+/*.rbxl*
+/*.rbxm*
+
+# Luau
+sourcemap.json
+
+# Selene
+roblox.toml
+
+# Wally
+/wally.lock
 /Packages
+
+# misc
+/Icon.png
+/.vscode
