@@ -5,7 +5,15 @@ local Packages = require(Modules.Packages)
 local Signal = require(Packages.Directory.Signal)
 
 if Packages.IsPlugin then
-	return settings():GetService("Studio")
+	local StudioSettings = settings():GetService("Studio")
+	return {
+		Theme = {
+			GetColor = function(_, ColorEnumName: string): Color3
+				return StudioSettings:GetColor(Enum.StudioStyleGuideColor[ColorEnumName])
+			end
+		},
+		ThemeChanged = StudioSettings.Theme.ThemeChanged,
+	}
 else
 	--[[
 		This is a workaround for the fact that the StudioSettings service is not available on the client.
@@ -136,8 +144,8 @@ else
 
 	return {
 		Theme = {
-			GetColor = function(_, StudioStyleGuideColorEnum: EnumItem): Color3
-				return Colors[StudioStyleGuideColorEnum.Name]
+			GetColor = function(_, ColorEnumName: string): Color3
+				return Colors[ColorEnumName]
 			end,
 		},
 		ThemeChanged = Signal.new(),

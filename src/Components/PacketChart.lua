@@ -80,7 +80,7 @@ function DataChartItem:render()
 				Font = Enum.Font.SourceSans,
 				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %d%s", Arc.Color:ToHex(), Arc.Name, Arc.Percent, GetSizeUnit(Arc.DataSize)),
 				RichText = true,
-				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+				TextColor3 = Theme:GetColor("BrightText"),
 				TextSize = 14,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				BackgroundTransparency = 1,
@@ -97,12 +97,12 @@ function DataChartItem:render()
 			["2RemoteData"] = Roact.createElement("ScrollingFrame", {
 				AutomaticSize = Enum.AutomaticSize.Y,
 				AutomaticCanvasSize = Enum.AutomaticSize.X,
-				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+				BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
 				Position = UDim2.fromOffset(0, 20),
 				Size = UDim2.new(1, -12, 0, 0),
 				ClipsDescendants = true,
 				BorderSizePixel = 0,
-				ScrollBarImageColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBar),
+				ScrollBarImageColor3 = Theme:GetColor("ScrollBar"),
 				ScrollBarThickness = 4,
 				ScrollingDirection = Enum.ScrollingDirection.X,
 				Visible = self.RemoteData,
@@ -112,7 +112,7 @@ function DataChartItem:render()
 					CornerRadius = UDim.new(0, 4),
 				}),]]
 				UIStroke = Roact.createElement("UIStroke", {
-					Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+					Color = Theme:GetColor("Separator"),
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				}),
 				Text = Roact.createElement("TextLabel", {
@@ -130,7 +130,7 @@ function DataChartItem:render()
 							return Result
 						end
 					end),
-					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+					TextColor3 = Theme:GetColor("BrightText"),
 					TextSize = 12,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
@@ -147,7 +147,7 @@ function DataChartItem:render()
 			}),
 			["3Separator"] = Roact.createElement("Frame", {
 				AnchorPoint = Vector2.new(0, 1),
-				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+				BackgroundColor3 = Theme:GetColor("Separator"),
 				BorderSizePixel = 0,
 				Position = UDim2.fromScale(0, 1),
 				Size = UDim2.new(1, -12, 0, 1),
@@ -270,7 +270,7 @@ function PacketChart:render()
 				AutomaticSize = Packages.IsPlugin and Enum.AutomaticSize.None or Enum.AutomaticSize.Y,
 			}, {
 				Background = Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
+					BackgroundColor3 = Theme:GetColor("MainBackground"),
 					BorderSizePixel = 0,
 					ZIndex = 0,
 					Size = UDim2.fromScale(1, 1),
@@ -283,7 +283,7 @@ function PacketChart:render()
 				}, {
 					-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
 					BackgroundUI = Roact.createElement("Frame", {
-						BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+						BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
 						Size = UDim2.fromScale(1, 1),
 						Visible = #self.state.Arcs > 0,
 					}, {
@@ -291,7 +291,7 @@ function PacketChart:render()
 							CornerRadius = UDim.new(0, 4),
 						}),
 						UIStroke = Roact.createElement("UIStroke", {
-							Color = Theme:GetColor(Enum.StudioStyleGuideColor.Separator),
+							Color = Theme:GetColor("Separator"),
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						}),
 					}),
@@ -300,7 +300,7 @@ function PacketChart:render()
 					}),
 				}),
 				DataList = Roact.createElement("ScrollingFrame", {
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
+					BackgroundColor3 = Theme:GetColor("MainBackground"),
 					Size = UDim2.new(1, -PIE_CHART_SIZE - DATA_LIST_OFFSET, 1, 0),
 					Position = UDim2.fromScale(1, 0),
 					AnchorPoint = Vector2.new(1, 0),
@@ -312,7 +312,7 @@ function PacketChart:render()
 					BottomImage = "rbxassetid://5234388158",
 					MidImage = "rbxassetid://5234388158",
 					TopImage = "rbxassetid://5234388158",
-					ScrollBarImageColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Light),
+					ScrollBarImageColor3 = Theme:GetColor("Light"),
 					ScrollBarThickness = 6,
 				}, {
 					UIListLayout = Roact.createElement("UIListLayout", {
@@ -334,7 +334,7 @@ function PacketChart:render()
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					BackgroundTransparency = 1,
 					Text = "Start session to begin",
-					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.WarningText),
+					TextColor3 = Theme:GetColor("WarningText"),
 					TextSize = 20,
 					Font = Enum.Font.SourceSans,
 					TextXAlignment = Enum.TextXAlignment.Center,

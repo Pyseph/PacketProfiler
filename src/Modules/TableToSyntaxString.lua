@@ -22,16 +22,16 @@ local CONTROL_CHARS = "[%c%z]"
 local NO_TRAILING = "^%s*(.-)%s*$"
 
 local StyleGuideColorEnums = {
-	string = Enum.StudioStyleGuideColor.ScriptString,
-	number = Enum.StudioStyleGuideColor.ScriptNumber,
-	operator = Enum.StudioStyleGuideColor.ScriptOperator,
-	keyword = Enum.StudioStyleGuideColor.ScriptKeyword,
-	boolean = Enum.StudioStyleGuideColor.ScriptKeyword,
-	builtin = Enum.StudioStyleGuideColor.ScriptBuiltInFunction,
-	funcname = Enum.StudioStyleGuideColor.ScriptFunctionName,
-	text = Enum.StudioStyleGuideColor.ScriptText,
-	["nil"] = Enum.StudioStyleGuideColor.ScriptKeyword,
-	bytesize = Enum.StudioStyleGuideColor.ScriptComment,
+	string = "ScriptString",
+	number = "ScriptNumber",
+	operator = "ScriptOperator",
+	keyword = "ScriptKeyword",
+	boolean = "ScriptKeyword",
+	builtin = "ScriptBuiltInFunction",
+	funcname = "ScriptFunctionName",
+	text = "ScriptText",
+	["nil"] = "ScriptKeyword",
+	bytesize = "ScriptComment",
 }
 local StyleGuideColors = {}
 local c = {

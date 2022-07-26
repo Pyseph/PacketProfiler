@@ -289,8 +289,8 @@ function PacketFrames:render()
 		FrameTooltip = StudioTheme(function(Theme: StudioTheme)
 			return Roact.createElement("Frame", {
 				AutomaticSize = Enum.AutomaticSize.XY,
-				BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Dropdown),
-				BorderColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.Border),
+				BackgroundColor3 = Theme:GetColor("Dropdown"),
+				BorderColor3 = Theme:GetColor("Border"),
 				Position = self.MousePosition:map(function(MousePosition)
 					return UDim2.fromOffset(MousePosition.X, MousePosition.Y + TOOLTIP_HEIGHT_OFFSET)
 				end),
@@ -302,7 +302,7 @@ function PacketFrames:render()
 					Text = self.MouseFrameData:map(function(FrameData)
 						return string.format("%d packets, %d bytes", #FrameData.Packets, FrameData.TotalSize)
 					end),
-					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+					TextColor3 = Theme:GetColor("BrightText"),
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Center,
 					Font = Enum.Font.SourceSans,
@@ -314,7 +314,7 @@ function PacketFrames:render()
 					Text = self.MouseFrameData:map(function(FrameData)
 						return string.format("%.3f KB sent", FrameData.TotalSize / 1000)
 					end),
-					TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.BrightText),
+					TextColor3 = Theme:GetColor("BrightText"),
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Center,
 					Font = Enum.Font.SourceSans,
@@ -331,7 +331,7 @@ function PacketFrames:render()
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
 				Text = "Start session to begin",
-				TextColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.WarningText),
+				TextColor3 = Theme:GetColor("WarningText"),
 				TextSize = 20,
 				Font = Enum.Font.SourceSans,
 				TextXAlignment = Enum.TextXAlignment.Center,

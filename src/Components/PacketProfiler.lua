@@ -21,7 +21,7 @@ local function TopbarButton(props)
 	return Roact.createElement("TextButton", {
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		Size = UDim2.fromOffset(0, TOPBAR_HEIGHT),
-		BackgroundColor3 = props.Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+		BackgroundColor3 = props.Theme:GetColor("ScrollBarBackground"),
 		TextSize = TOPBAR_HEIGHT + 2,
 		Font = Enum.Font.Code,
 		Text = props.Text,
@@ -40,7 +40,7 @@ local function TopbarOptionsButton(props)
 		Font = Enum.Font.Code,
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		TextSize = TOPBAR_HEIGHT + 2,
-		BackgroundColor3 = props.Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+		BackgroundColor3 = props.Theme:GetColor("ScrollBarBackground"),
 		Size = props.Size,
 		BorderSizePixel = 0,
 		[Roact.Event.Activated] = props.OnClick,
@@ -77,7 +77,7 @@ function TopbarButtonsGroup:render()
 		Text = props.Text,
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		BackgroundColor3 = self.MouseHovering:map(function(VisibleIndex)
-			return VisibleIndex > 0 and props.Theme:GetColor(Enum.StudioStyleGuideColor.Light) or props.Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground)
+			return VisibleIndex > 0 and props.Theme:GetColor("Light") or props.Theme:GetColor("ScrollBarBackground")
 		end),
 		TextSize = TOPBAR_HEIGHT + 2,
 		Font = Enum.Font.Code,
@@ -157,9 +157,9 @@ function ProfilerComponent:render()
 			IgnoreGuiInset = true,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}, {
-			Background = StudioTheme(function(Theme: StudioTheme)
+			Background = StudioTheme(function(Theme)
 				return Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.MainBackground),
+					BackgroundColor3 = Theme:GetColor("MainBackground"),
 					BorderSizePixel = 0,
 					Size = UDim2.new(1, 0, 0, 50),
 					Position = UDim2.fromOffset(0, TOPBAR_HEIGHT),
@@ -173,9 +173,9 @@ function ProfilerComponent:render()
 					})
 				})
 			end),
-			Topbar = StudioTheme(function(Theme: StudioTheme)
+			Topbar = StudioTheme(function(Theme)
 				return Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor(Enum.StudioStyleGuideColor.ScrollBarBackground),
+					BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
 					BorderSizePixel = 0,
 					ZIndex = 2,
 					Size = UDim2.new(1, 0, 0, TOPBAR_HEIGHT),
