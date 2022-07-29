@@ -26,7 +26,7 @@ local VECTOR3_BYTES = 3*Float32
 local TypeByteSizes: {[string]: number} = {
 	EnumItem = Int32,
 	boolean = 2,
-	number = Float64+1,
+	number = Float64,
 	UDim = Float32 + Int32,
 	UDim2 = 2*(Float32 + Int32),
 	Ray = 6*Float32,
@@ -34,10 +34,11 @@ local TypeByteSizes: {[string]: number} = {
 	Axes = 6,
 	BrickColor = Int32,
 	Color3 = COLOR3_BYTES,
-	Vector2 = 2*Float32 + 1,
+	Vector2 = 2*Float32,
 	Vector3 = VECTOR3_BYTES,
 	-- It's unclear how instances are sent, but in binary-storage format they're stored with
 	-- 'Referents', which can be found in the binary-storage documentation above.
+	-- Benchmarks also show that they take up 4 bytes, excluding byte overhead.
 	Instance = Int32,
 	Vector2Int16 = 2*Int16,
 	Vector3Int16 = 3*Int16,
@@ -93,11 +94,11 @@ local function GetDataByteSize(Data: any, AlreadyTraversed: {[{[any]: any}]: boo
 				Index += 1
 			end
 
-			KeyTotal += GetDataByteSize(Key, AlreadyTraversed)
-			ValueTotal += GetDataByteSize(Value, AlreadyTraversed)
+			KeyTotal += GetDataByteSize(Key, AlreadyTraversed) + BYTE_OVERHEAD
+			ValueTotal += GetDataByteSize(Value, AlreadyTraversed) + BYTE_OVERHEAD
 		end
 
-		return 2 + (IsOrdered and ValueTotal or KeyTotal + ValueTotal)
+		return 1 + (IsOrdered and #Data + ValueTotal or KeyTotal + ValueTotal)
 	elseif DataType == "CFrame" then
 		local IsSpecialCase = false
 		for SpecialCase in next, CFrameSpecialCases do
