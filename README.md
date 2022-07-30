@@ -1,17 +1,19 @@
 
-<h1 align="center">PacketProfiler</h1>
+<h1 align="center">
+PacketProfiler
 
-<div align="center">
-Remote packet analyzer tool for Roblox
-</div>
+<img src="https://user-images.githubusercontent.com/45090858/181864347-96269b03-25d7-475a-a7ad-352e1955fd4f.png" width="100" height="100" /></h1>
+
+<div align="center">Remote packet analyzer tool for Roblox</div>
 
 <div>&nbsp;</div>
 
 ## Introduction
 
 Packet Profiler is a plugin which allows you to accurately read remote data sent by different contexts. Unlike the vague and uninformative Stats windows which only show the current KB/s receive and send rates, this plugin allows you to accurately see packet data each frame, along with precise byte size information.
-![image](https://user-images.githubusercontent.com/45090858/180661098-e82a653d-1b73-41fa-ab61-ef1945013fa0.png)
-![image](https://user-images.githubusercontent.com/45090858/180661101-36211430-1056-4d43-97d0-5f4e2279e663.png)
+![image](https://user-images.githubusercontent.com/45090858/181864397-9b9d5e82-72fe-4bee-b29f-9b8e5a16aa4d.png)
+![image](https://user-images.githubusercontent.com/45090858/181864404-9a0bdcb9-f89e-4c21-bdc7-201a88cb36f7.png)
+
 
 # Installation
 
