@@ -39,7 +39,7 @@ local function GetSizeUnit(Value: number): (number, string)
 	end
 end
 
-local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME)
+local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME, true)
 local RemoteNameLabeler = nil
 if RemoteNameModule == nil then
 	local Connection
@@ -52,7 +52,7 @@ if RemoteNameModule == nil then
 	end)
 else
 	assert(typeof(require(RemoteNameModule)) == "function", "Return of RemoteName.profiler must be a function")
-	RemoteNameLabeler = require(RemoteNameLabeler)
+	RemoteNameLabeler = require(RemoteNameModule)
 end
 
 local function GetRemoteName(RemoteObject: RemoteEvent, FirstArgument: any?)

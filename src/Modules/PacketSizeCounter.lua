@@ -25,7 +25,7 @@ local VECTOR3_BYTES = 3*Float32
 
 local TypeByteSizes: {[string]: number} = {
 	EnumItem = Int32,
-	boolean = 2,
+	boolean = 1,
 	number = Float64,
 	UDim = Float32 + Int32,
 	UDim2 = 2*(Float32 + Int32),
