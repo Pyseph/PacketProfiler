@@ -1,5 +1,4 @@
 --!strict
-
 local REMOTE_OVERHEAD = 9
 local BYTE_OVERHEAD = 1
 
