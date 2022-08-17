@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Foreman
+        uses: Roblox/setup-foreman@v1
+        with:
+          version: "^1.0.0"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lint
+        run: selene ./src
