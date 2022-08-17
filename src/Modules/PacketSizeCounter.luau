@@ -40,8 +40,8 @@ local TypeByteSizes: {[string]: number} = {
 	-- 'Referents', which can be found in the binary-storage documentation above.
 	-- Benchmarks also show that they take up 4 bytes, excluding byte overhead.
 	Instance = Int32,
-	Vector2Int16 = 2*Int16,
-	Vector3Int16 = 3*Int16,
+	Vector2int16 = 2*Int16,
+	Vector3int16 = 3*Int16,
 	NumberSequenceKeypoint = 3*Float32,
 	ColorSequenceKeypoint = 4*Float32,
 	NumberRange = 2*Float32,
