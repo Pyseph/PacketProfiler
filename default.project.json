@@ -1,7 +1,7 @@
 {
 	"name": "packetprofiler",
 	"tree": {
-		"$path": "build/main.lua",
+		"$path": "build/main.luau",
 		"Components": {
 			"$path": "src/Components"
 		},

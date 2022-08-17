@@ -7,7 +7,7 @@
 			"user_PacketProfilerTest.rbxm": {
 				"$className": "Plugin",
 				"PacketProfiler": {
-					"$path": "build/main.server.lua",
+					"$path": "build/main.server.luau",
 					"Components": {
 						"$path": "src/Components"
 					},
