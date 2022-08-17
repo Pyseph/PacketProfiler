@@ -1,5 +1,6 @@
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
@@ -15,6 +16,7 @@ local MAX_FRAMES = 256
 local TOOLTIP_WIDTH = 200
 -- https://developer.roblox.com/en-us/api-reference/property/Mouse/Icon#:~:text=The%20default%20mouse%20image%20is,up%2017x24%20pixels%20of%20space.
 local TOOLTIP_HEIGHT_OFFSET = 24
+local REMOTE_FUNCTION_EVENT_NAME = "RemoteFunctionEvent.profiler"
 local GuiInset = GuiService:GetGuiInset()
 
 local PacketFrames = Roact.Component:extend("PacketFrames")
@@ -22,6 +24,8 @@ local PacketFrame = Roact.Component:extend("PacketFrame")
 
 local IsEditMode = not RunService:IsRunning()
 local RemoteContext = RunService:IsClient() and "OnClientEvent" or "OnServerEvent"
+
+local RemoteFunctionEvent = ReplicatedStorage:FindFirstChild(REMOTE_FUNCTION_EVENT_NAME, true)
 
 function PacketFrame:render()
 	local props = self.props
@@ -207,6 +211,7 @@ function PacketFrames:didMount()
 					end)
 				end
 			end
+
 			game.DescendantAdded:Connect(function(Object)
 				if Object:IsA("RemoteEvent") then
 					Object[RemoteContext]:Connect(function(...)
@@ -214,6 +219,18 @@ function PacketFrames:didMount()
 					end)
 				end
 			end)
+
+			if RemoteFunctionEvent == nil then
+				local Connection; Connection = ReplicatedStorage.DescendantAdded:Connect(function(Object)
+					if Object:IsA("BindableEvent") and Object.Name == REMOTE_FUNCTION_EVENT_NAME then
+						RemoteFunctionEvent = Object
+						RemoteFunctionEvent.Event:Connect(self.RemoteCallback)
+						Connection:Disconnect()
+					end
+				end)
+			else
+				RemoteFunctionEvent.Event:Connect(self.RemoteCallback)
+			end
 
 			RunService.RenderStepped:Connect(function()
 				if not self.Enabled then

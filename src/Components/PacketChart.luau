@@ -40,6 +40,7 @@ local function GetSizeUnit(Value: number): (number, string)
 end
 
 local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME, true)
+
 local RemoteNameLabeler = nil
 if RemoteNameModule == nil then
 	local Connection
