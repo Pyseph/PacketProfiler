@@ -1,2 +1,2 @@
 # Add .luau files to be highlighted as .lua files
-autocmd BufNewFile,BufRead *.luau set filetype=lua
+*.luau linguist-language=Lua
