@@ -8,9 +8,10 @@ local Modules = PacketProfiler.Modules
 local Packages = require(Modules.Packages)
 
 local Roact = require(Packages.Directory.Roact)
+local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
+
 local StudioTheme = require(Components.StudioTheme)
 local CircularBuffer = require(Modules.CircularBuffer)
-local GetRemotePacketSize = require(Modules.PacketSizeCounter)
 
 local MAX_FRAMES = 256
 local TOOLTIP_WIDTH = 200
@@ -96,9 +97,15 @@ function PacketFrames:init()
 
 		local PacketSize = 0
 		if RunService:IsClient() then
-			PacketSize = GetRemotePacketSize(true, FirstArgument, ...)
+			PacketSize = PacketSizeCounter.GetPacketSize({
+				IgnoreRemoteOffset = true,
+				PacketData = {FirstArgument, ...}
+			})
 		else
-			PacketSize = GetRemotePacketSize(true, ...)
+			PacketSize = PacketSizeCounter.GetPacketSize({
+				IgnoreRemoteOffset = true,
+				PacketData = {...}
+			})
 		end
 
 		self.CurrentFrame.TotalSize += PacketSize

@@ -8,4 +8,5 @@ license = "MIT"
 
 [dependencies]
 Roact = "pysephwasntavailable/roact-constant-fork@1.5.0"
+PacketSizeCounter = "pysephwasntavailable/remotepacketsizecounter@2.0.0"
 Signal = "stravant/goodsignal@0.2.1"
