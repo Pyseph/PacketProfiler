@@ -19,6 +19,10 @@ Since Remote Functions only allow setting one write-only callback, you can manua
 
 This BindableEvent may also be used to log RemoteEvents that have been created at run-time.
 
+## Renaming RemoteEvents
+Some games may rename their RemoteEvents for network & encoding purposes (such as those that only use 1 RemoteEvent for everything). You can rename RemoteEvents by adding a `RemoteName.profiler` ModuleScript anywhere in ReplicatedStorage, whose return must be a function. This function will be called with two arguments: the invoked RemoteEvent, and the RemoteEvent's first argument. The function must return a string, which will be used as the RemoteEvent's name in the profiler.
+**NOTE**: adding this will cause the profiler to use the module to rename all remote events, so make sure to return the original name if you don't want to rename a specific RemoteEvent.
+
 # Installation
 
 ### Method 1: Studio Plugin (Roblox Studio)
