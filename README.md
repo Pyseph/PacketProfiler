@@ -14,6 +14,14 @@ Packet Profiler is a plugin which allows you to accurately read remote data sent
 ![image](https://user-images.githubusercontent.com/45090858/181864397-9b9d5e82-72fe-4bee-b29f-9b8e5a16aa4d.png)
 ![image](https://user-images.githubusercontent.com/45090858/181864404-9a0bdcb9-f89e-4c21-bdc7-201a88cb36f7.png)
 
+## Adding Remote Functions
+Since Remote Functions only allow setting one write-only callback, you can manually tell the profiler to log packets by adding a BindableEvent anywhere in ReplicatedStorage called `RemoteFunctionEvent.profiler`. You can then fire this BindableEvent with a RemoteFunction as the first argument, and any data as the rest of the arguments. The profiler will then log the packet data.
+
+This BindableEvent may also be used to log RemoteEvents that have been created at run-time.
+
+## Renaming RemoteEvents
+Some games may rename their RemoteEvents for network & encoding purposes (such as those that only use 1 RemoteEvent for everything). You can rename RemoteEvents by adding a `RemoteName.profiler` ModuleScript anywhere in ReplicatedStorage, whose return must be a function. This function will be called with two arguments: the invoked RemoteEvent, and the RemoteEvent's first argument. The function must return a string, which will be used as the RemoteEvent's name in the profiler.
+**NOTE**: adding this will cause the profiler to use the module to rename all remote events, so make sure to return the original name if you don't want to rename a specific RemoteEvent.
 
 # Installation
 

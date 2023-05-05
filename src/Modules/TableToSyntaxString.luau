@@ -1,12 +1,14 @@
 local PacketProfiler = script.Parent.Parent
+
 local Modules = PacketProfiler.Modules
 local Components = PacketProfiler.Components
+local Packages = require(Modules.Packages)
 
-local GetRemotePacketSize = require(Modules.PacketSizeCounter)
+local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 local StudioSettings = require(Components.StudioSettings)
 
 local function GetByteSize(Value: any): string
-	local ValueSize = GetRemotePacketSize(true, Value)
+	local ValueSize = PacketSizeCounter.GetDataByteSize(Value)
 	if ValueSize < 1000 then
 		return ValueSize .. "B"
 	else
@@ -93,7 +95,7 @@ local function TableToSyntaxString(Table, IgnoredTables, DepthData, Path)
 	IgnoredTables = IgnoredTables or {}
 	local CyclicData = IgnoredTables[Table]
 	if CyclicData then
-		-- Remotes cant pass cyclic tableS, but I'm keeping it just in case
+		-- Remotes cant pass cyclic tables, but I'm keeping it just in case
 		return Syntax("&quot;[Cyclic reference]&quot;", "string")
 	end
 
