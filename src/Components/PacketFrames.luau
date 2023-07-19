@@ -98,12 +98,14 @@ function PacketFrames:init()
 		local PacketSize = 0
 		if RunService:IsClient() then
 			PacketSize = PacketSizeCounter.GetPacketSize({
-				IgnoreRemoteOffset = true,
+				RunContext = "Client",
+				RemoteType = Remote.ClassName,
 				PacketData = {FirstArgument, ...}
 			})
 		else
 			PacketSize = PacketSizeCounter.GetPacketSize({
-				IgnoreRemoteOffset = true,
+				RunContext = "Server",
+				RemoteType = Remote.ClassName,
 				PacketData = {...}
 			})
 		end
