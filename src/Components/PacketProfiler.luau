@@ -159,6 +159,7 @@ function ProfilerComponent:render()
 			Enabled = self.props.Enabled,
 			DisplayOrder = 10,
 			IgnoreGuiInset = true,
+			ResetOnSpawn = false,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}, {
 			Background = StudioTheme(function(Theme)
