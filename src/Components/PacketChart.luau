@@ -258,6 +258,7 @@ function PacketChart:render()
 		},
 		Client = {
 			IgnoreGuiInset = true,
+			ResetOnSpawn = false,
 			Enabled = self.ChartEnabled,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}
