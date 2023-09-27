@@ -11,8 +11,9 @@ PacketProfiler
 ## Introduction
 
 Packet Profiler is a plugin which allows you to accurately read remote data sent by different contexts. Unlike the vague and uninformative Stats windows which only show the current KB/s receive and send rates, this plugin allows you to accurately see packet data each frame, along with precise byte size information.
+
+![image](https://github.com/Pyseph/PacketProfiler/assets/45090858/9a68dc84-0ad5-4358-9e79-8750d9e40b2e)
 ![image](https://user-images.githubusercontent.com/45090858/181864397-9b9d5e82-72fe-4bee-b29f-9b8e5a16aa4d.png)
-![image](https://user-images.githubusercontent.com/45090858/181864404-9a0bdcb9-f89e-4c21-bdc7-201a88cb36f7.png)
 
 ## Adding Remote Functions
 Since Remote Functions only allow setting one write-only callback, you can manually tell the profiler to log packets by adding a BindableEvent anywhere in ReplicatedStorage called `RemoteFunctionEvent.profiler`. You can then fire this BindableEvent with a RemoteFunction as the first argument, and any data as the rest of the arguments. The profiler will then log the packet data.
