@@ -85,6 +85,9 @@ local function SerializeType(Value, Class)
 		return Syntax(string.format("&quot;%s&quot;", (string.gsub(Value, CONTROL_CHARS, SpecialCharacters))), "string")
 	elseif Class == "Instance" then
 		return GetHierarchy(Value)
+	elseif Class == "buffer" then
+		-- buffer.new(SerializeType(buffer.tostring(Value), "string")
+		return Syntax("buffer.new", "builtin") .. c["("] .. SerializeType(buffer.tostring(Value), "string") .. c[")"]
 	elseif type(Value) ~= Class then -- CFrame, Vector3, UDim2, ...
 		return Syntax(Class, "builtin") .. c["."] .. Syntax("new", "builtin") .. c["("] .. Syntax(tostring(Value), "number") .. c[")"]
 	else -- number, boolean, nil, ...
