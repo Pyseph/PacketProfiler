@@ -214,7 +214,7 @@ function PacketFrames:didMount()
 			end
 
 			for _, Object in next, game:GetDescendants() do
-				if Object:IsA("RemoteEvent") then
+				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
 					Object[RemoteContext]:Connect(function(...)
 						self.RemoteCallback(Object, ...)
 					end)
@@ -222,7 +222,7 @@ function PacketFrames:didMount()
 			end
 
 			game.DescendantAdded:Connect(function(Object)
-				if Object:IsA("RemoteEvent") then
+				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
 					Object[RemoteContext]:Connect(function(...)
 						self.RemoteCallback(Object, ...)
 					end)
