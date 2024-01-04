@@ -20,6 +20,13 @@ Since Remote Functions only allow setting one write-only callback, you can manua
 
 This BindableEvent may also be used to log RemoteEvents that have been created at run-time.
 
+## In-game profiling
+Sometimes, simply profiling in studio may not be enough. As such, you can use this plugin **in-game**! Simply grab the latest release `.rbxm` file and place it inside `StarterPlayerScripts`. You can then open the UI through `Ctrl + F5`, and pause/unpause through `Ctrl + P`.
+<https://github.com/PysephWasntAvailable/PacketProfiler/releases/>
+
+Alternatively, you can install the in-game profiler through **Wally**:
+<https://wally.run/package/pysephwasntavailable/packetprofiler>
+
 ## Renaming RemoteEvents
 Some games may rename their RemoteEvents for network & encoding purposes (such as those that only use 1 RemoteEvent for everything). You can rename RemoteEvents by adding a `RemoteName.profiler` ModuleScript anywhere in ReplicatedStorage, whose return must be a function. This function will be called with two arguments: the invoked RemoteEvent, and the RemoteEvent's first argument. The function must return a string, which will be used as the RemoteEvent's name in the profiler.
 **NOTE**: adding this will cause the profiler to use the module to rename all remote events, so make sure to return the original name if you don't want to rename a specific RemoteEvent.
