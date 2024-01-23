@@ -231,7 +231,6 @@ function PacketChart:didMount()
 			return a.Percent > b.Percent
 		end)
 
-		print(Arcs)
 		self:setState({
 			Arcs = Arcs,
 		})
