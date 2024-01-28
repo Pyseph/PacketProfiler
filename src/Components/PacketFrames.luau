@@ -330,6 +330,7 @@ function PacketFrames:render()
 			}, {
 				UIListLayout = Roact.createElement("UIListLayout", {}),
 				FrameLabel = Roact.createElement("TextLabel", {
+					AutoLocalize = false,
 					Text = self.MouseFrameData:map(function(FrameData)
 						return string.format("%d packets, %d bytes", #FrameData.Packets, FrameData.TotalSize)
 					end),
@@ -342,6 +343,7 @@ function PacketFrames:render()
 					BackgroundTransparency = 1,
 				}),
 				KBSent = Roact.createElement("TextLabel", {
+					AutoLocalize = false,
 					Text = self.MouseFrameData:map(function(FrameData)
 						return string.format("%.3f KB sent", FrameData.TotalSize / 1000)
 					end),
@@ -357,6 +359,7 @@ function PacketFrames:render()
 		end),
 		EditModeNotifier = StudioTheme(function(Theme)
 			return Roact.createElement("TextLabel", {
+				AutoLocalize = false,
 				Size = UDim2.fromScale(1, 1),
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),

@@ -19,6 +19,7 @@ local IsEditMode = not RunService:IsRunning()
 
 local function TopbarButton(props)
 	return Roact.createElement("TextButton", {
+		AutoLocalize = false,
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		Size = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 		BackgroundColor3 = props.Theme:GetColor("Item"),
@@ -35,6 +36,7 @@ end
 
 local function TopbarOptionsButton(props)
 	return Roact.createElement("TextButton", {
+		AutoLocalize = false,
 		Text = props.ButtonName,
 		TextXAlignment = Enum.TextXAlignment.Right,
 		TextYAlignment = Enum.TextYAlignment.Center,
@@ -75,6 +77,7 @@ function TopbarButtonsGroup:render()
 
 	local ButtonGroupTextSize = TextService:GetTextSize(props.Text, TOPBAR_HEIGHT + 2, Enum.Font.Code, Vector2.new(10000, TOPBAR_HEIGHT + 1))
 	return Roact.createElement("TextLabel", {
+		AutoLocalize = false,
 		Text = props.Text,
 		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
 		BackgroundColor3 = self.MouseHovering:map(function(VisibleIndex)

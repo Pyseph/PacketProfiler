@@ -78,6 +78,7 @@ function DataChartItem:render()
 			AutomaticSize = Enum.AutomaticSize.Y,
 		}, {
 			["1Information"] = Roact.createElement("TextButton", {
+				AutoLocalize = false,
 				Font = Enum.Font.SourceSans,
 				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %d%s", Arc.Color:ToHex(), Arc.Name, Arc.Percent, GetSizeUnit(Arc.DataSize)),
 				RichText = true,
@@ -117,6 +118,7 @@ function DataChartItem:render()
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				}),
 				Text = Roact.createElement("TextLabel", {
+					AutoLocalize = false,
 					Font = Enum.Font.Code,
 					RichText = true,
 					Text = self.RemoteData:map(function()
@@ -330,6 +332,7 @@ function PacketChart:render()
 					})
 				}),
 				EditModeNotifier = Roact.createElement("TextLabel", {
+					AutoLocalize = false,
 					Size = UDim2.fromScale(1, 1),
 					Position = UDim2.fromScale(0.5, 0.5),
 					AnchorPoint = Vector2.new(0.5, 0.5),
