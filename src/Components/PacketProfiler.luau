@@ -159,7 +159,7 @@ function ProfilerComponent:render()
 		target = TargetGui,
 	}, {
 		PacketProfiler = Roact.createElement("ScreenGui", {
-			Enabled = self.props.Enabled,
+			Enabled = self.state.Enabled,
 			DisplayOrder = 10,
 			IgnoreGuiInset = true,
 			ResetOnSpawn = false,
@@ -174,7 +174,7 @@ function ProfilerComponent:render()
 					Position = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 				}, {
 					PacketFrames = Roact.createElement(PacketFrames, {
-						Enabled = self.props.Enabled,
+						Enabled = self.state.Enabled,
 						MaxFrameSize = self.state.MaxFrameSize,
 						OnPacketProfilerPaused = self.OnPacketProfilerPaused,
 						OnPacketProfilerEnabled = self.props.OnEnabled,
