@@ -136,12 +136,14 @@ function ProfilerComponent:init()
 		MaxFrameSize = 1*1000,
 	})
 
+	self.Cleanup = {}
+
 	self.PacketProfilerPaused, self.SetPacketProfilerPaused = Roact.createBinding(false)
 	self.OnPacketProfilerPaused = Signal.new()
 
-	self.OnPacketProfilerPaused:Connect(function(IsPaused)
+	table.insert(self.Cleanup, self.OnPacketProfilerPaused:Connect(function(IsPaused)
 		self.SetPacketProfilerPaused(IsPaused)
-	end)
+	end))
 
 	function self.Pause(IsPaused)
 		self.OnPacketProfilerPaused:Fire(IsPaused)
@@ -149,9 +151,14 @@ function ProfilerComponent:init()
 end
 
 function ProfilerComponent:didMount()
-	self.props.Signals.ProfilerPaused:Connect(function(IsPaused)
+	table.insert(self.Cleanup, self.props.Signals.ProfilerPaused:Connect(function(IsPaused)
 		self.Pause(IsPaused)
-	end)
+	end))
+end
+function ProfilerComponent:willUnmount()
+	for _, Connection in self.Cleanup do
+		Connection:Disconnect()
+	end
 end
 
 function ProfilerComponent:render()
@@ -159,7 +166,7 @@ function ProfilerComponent:render()
 		target = TargetGui,
 	}, {
 		PacketProfiler = Roact.createElement("ScreenGui", {
-			Enabled = self.state.Enabled,
+			Enabled = self.props.Enabled,
 			DisplayOrder = 10,
 			IgnoreGuiInset = true,
 			ResetOnSpawn = false,
@@ -174,7 +181,7 @@ function ProfilerComponent:render()
 					Position = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 				}, {
 					PacketFrames = Roact.createElement(PacketFrames, {
-						Enabled = self.state.Enabled,
+						Enabled = self.props.Enabled,
 						MaxFrameSize = self.state.MaxFrameSize,
 						OnPacketProfilerPaused = self.OnPacketProfilerPaused,
 						OnPacketProfilerEnabled = self.props.OnEnabled,
