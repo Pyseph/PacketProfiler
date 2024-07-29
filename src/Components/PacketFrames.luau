@@ -29,6 +29,8 @@ local RemoteContext = RunService:IsClient() and "OnClientEvent" or "OnServerEven
 local RemoteFunctionEvent = ReplicatedStorage:FindFirstChild(REMOTE_FUNCTION_EVENT_NAME, true)
 
 function PacketFrames:init()
+	self.Cleanup = {}
+
 	self.ProfilerBackgroundRef = Roact.createRef()
 	self.Enabled = not IsEditMode
 
@@ -149,9 +151,9 @@ end
 
 function PacketFrames:didMount()
 	if not IsEditMode then
-		self.props.OnPacketProfilerPaused:Connect(function(Paused: boolean)
+		table.insert(self.Cleanup, self.props.OnPacketProfilerPaused:Connect(function(Paused: boolean)
 			self.Enabled = not Paused
-		end)
+		end))
 
 		self.CurrentFrame = {
 			Time = os.clock(),
@@ -162,33 +164,33 @@ function PacketFrames:didMount()
 		task.spawn(function()
 			for _, Object in game:GetDescendants() do
 				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
-					Object[RemoteContext]:Connect(function(...)
+					table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
 						self.RemoteCallback(Object, ...)
-					end)
+					end))
 				end
 			end
 
-			game.DescendantAdded:Connect(function(Object)
+			table.insert(self.Cleanup, game.DescendantAdded:Connect(function(Object)
 				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
-					Object[RemoteContext]:Connect(function(...)
+					table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
 						self.RemoteCallback(Object, ...)
-					end)
+					end))
 				end
-			end)
+			end))
 
 			if RemoteFunctionEvent == nil then
 				local Connection; Connection = ReplicatedStorage.DescendantAdded:Connect(function(Object)
 					if Object:IsA("BindableEvent") and Object.Name == REMOTE_FUNCTION_EVENT_NAME then
 						RemoteFunctionEvent = Object
-						RemoteFunctionEvent.Event:Connect(self.RemoteCallback)
+						table.insert(self.Cleanup, RemoteFunctionEvent.Event:Connect(self.RemoteCallback))
 						Connection:Disconnect()
 					end
 				end)
 			else
-				RemoteFunctionEvent.Event:Connect(self.RemoteCallback)
+				table.insert(self.Cleanup, RemoteFunctionEvent.Event:Connect(self.RemoteCallback))
 			end
 
-			RunService.RenderStepped:Connect(function()
+			table.insert(self.Cleanup, RunService.RenderStepped:Connect(function()
 				if not self.Enabled then
 					return
 				end
@@ -206,8 +208,13 @@ function PacketFrames:didMount()
 					local MousePosition = self.MousePosition:getValue()
 					self.UpdateMouseData(MousePosition.X, MousePosition.Y, self.SelectedFrameData:getValue().Selected)
 				end
-			end)
+			end))
 		end)
+	end
+end
+function PacketFrames:willUnmount()
+	for _, Connection in self.Cleanup do
+		Connection:Disconnect()
 	end
 end
 
