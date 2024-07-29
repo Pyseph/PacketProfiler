@@ -8,17 +8,20 @@ local Packages = require(Modules.Packages)
 
 local Roact = require(Packages.Directory.Roact)
 local Signal = require(Packages.Directory.Signal)
+local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 
 local StudioTheme = require(Components.StudioTheme)
 local PacketCircleArcs = require(Components.PacketCircleArcs)
+local PacketChartItems = require(Components.PacketChartItems)
+local ChartResize = require(Components.ChartResize)
 
 local TableToSyntaxString = require(Modules.TableToSyntaxString)
 
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
 local DATA_LIST_OFFSET = 20
+local SCROLLBAR_THICKNESS = 10
 local REMOTE_NAME_MODULE_NAME = "RemoteName.profiler"
-local RICHTEXT_CHARS_LIMIT = 16383
 
 local IsEditMode = not RunService:IsRunning()
 
@@ -28,15 +31,6 @@ local function GetRemoteColor()
 
 	local Color = Color3.fromHSV(HueValue, 0.5, 0.95)
 	return Color
-end
-local function GetSizeUnit(Value: number): (number, string)
-	if Value < 1000 then
-		return Value, "B"
-	elseif Value < 1000 * 1000 then
-		return Value / 1000, "KB"
-	else
-		return Value / (1000 * 1000), "MB"
-	end
 end
 
 local RemoteNameModule = ReplicatedStorage:FindFirstChild(REMOTE_NAME_MODULE_NAME, true)
@@ -56,133 +50,14 @@ else
 	RemoteNameLabeler = require(RemoteNameModule)
 end
 
-local function GetRemoteName(RemoteObject: RemoteEvent, FirstArgument: any?)
-	if RemoteNameLabeler ~= nil then
-		return RemoteNameLabeler(RemoteObject, FirstArgument)
-	else
-		return RemoteObject.Name
-	end
-end
-
-local DataChartItem = Roact.Component:extend("DataChartItem")
-
-function DataChartItem:init()
-	self.RemoteData, self.ShowRemoteData = Roact.createBinding(false)
-end
-function DataChartItem:render()
-	local Arc = self.props.Arc
-	return StudioTheme(function(Theme)
-		return Roact.createElement("Frame", {
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 22),
-			AutomaticSize = Enum.AutomaticSize.Y,
-		}, {
-			["1Information"] = Roact.createElement("TextButton", {
-				AutoLocalize = false,
-				Font = Enum.Font.SourceSans,
-				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %d%s", Arc.Color:ToHex(), Arc.Name, Arc.Percent, GetSizeUnit(Arc.DataSize)),
-				RichText = true,
-				TextColor3 = Theme:GetColor("BrightText"),
-				TextSize = 14,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 20),
-				ZIndex = 3,
-				[Roact.Event.Activated] = function()
-					self.ShowRemoteData(not self.RemoteData:getValue())
-				end,
-			}, {
-				Padding = Roact.createElement("UIPadding", {
-					PaddingBottom = UDim.new(0, 4),
-				}),
-			}),
-			["2RemoteData"] = Roact.createElement("ScrollingFrame", {
-				AutomaticSize = Enum.AutomaticSize.Y,
-				AutomaticCanvasSize = Enum.AutomaticSize.X,
-				BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
-				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.new(1, -12, 0, 0),
-				ClipsDescendants = true,
-				BorderSizePixel = 0,
-				ScrollBarImageColor3 = Theme:GetColor("ScrollBar"),
-				ScrollBarThickness = 4,
-				ScrollingDirection = Enum.ScrollingDirection.X,
-				Visible = self.RemoteData,
-			}, {
-				-- UICorners dont work on ScrollingFrames :(
-				--[[UICorner = Roact.createElement("UICorner", {
-					CornerRadius = UDim.new(0, 4),
-				}),]]
-				UIStroke = Roact.createElement("UIStroke", {
-					Color = Theme:GetColor("Separator"),
-					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				}),
-				Text = Roact.createElement("TextLabel", {
-					AutoLocalize = false,
-					Font = Enum.Font.Code,
-					RichText = true,
-					Text = self.RemoteData:map(function()
-						if #self.props.RemoteData < RICHTEXT_CHARS_LIMIT then
-							return self.props.RemoteData
-						else
-							local Result = (string.gsub((string.gsub(self.props.RemoteData, "<font color=\"#%w-\">", "")), "</font>", ""))
-							if #Result > RICHTEXT_CHARS_LIMIT then
-								return "<b><font color=\"#eb3434\">[Data is too long to be displayed]</font></b>"
-							end
-
-							return Result
-						end
-					end),
-					TextColor3 = Theme:GetColor("BrightText"),
-					TextSize = 12,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextYAlignment = Enum.TextYAlignment.Top,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					BackgroundTransparency = 1,
-					Size = UDim2.fromScale(1, 1),
-					ClipsDescendants = true,
-				}, {
-					Padding = Roact.createElement("UIPadding", {
-						PaddingBottom = UDim.new(0, 8),
-						PaddingRight = UDim.new(0, 4),
-					}),
-				}),
-			}),
-			["3Separator"] = Roact.createElement("Frame", {
-				AnchorPoint = Vector2.new(0, 1),
-				BackgroundColor3 = Theme:GetColor("Separator"),
-				BorderSizePixel = 0,
-				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.new(1, -12, 0, 1),
-				Visible = self.RemoteData:map(function(Visible)
-					return not Visible
-				end),
-			}, {
-				Padding = Roact.createElement("UIPadding", {
-					PaddingTop = UDim.new(0, 4),
-				}),
-			}),
-			Padding = Roact.createElement("UIPadding", {
-				PaddingLeft = UDim.new(0, 1),
-			}),
-			UIListLayout = Roact.createElement("UIListLayout"),
-		})
-	end)
-end
-
-local function DataChartItems(props)
-	local ChartItems = {}
-
-	local PercentOffset = 0
-	for _, Arc in next, props.Arcs do
-		PercentOffset -= Arc.Percent
-		ChartItems[PercentOffset] = Roact.createElement(DataChartItem, {
-			Arc = Arc,
-			RemoteData = Arc.RemoteData,
-		})
+local function GetRemoteData(RemoteObject: RemoteEvent, FirstArgument: any?): {{Name: string, Arguments: {any}}} | string
+	local RemoteData = RemoteNameLabeler and RemoteNameLabeler(RemoteObject, FirstArgument)
+	if not RemoteData then
+		local RemoteName = RemoteObject.Name
+		return `{RemoteObject.Parent}.{RemoteName}`
 	end
 
-	return Roact.createFragment(ChartItems)
+	return RemoteData
 end
 
 local PacketChart = Roact.Component:extend("PacketChart")
@@ -190,34 +65,74 @@ local PacketChart = Roact.Component:extend("PacketChart")
 function PacketChart:init()
 	self.ArcsUpdated = Signal.new()
 	self.ChartEnabled, self.SetChartEnabled = Roact.createBinding(false)
+	self.ScrollBarChanged, self.SetScrollBarChanged = Roact.createBinding({
+		Size = 0,
+		Visible = false,
+	})
+
+	self.OpenRemoteData = Signal.new()
 
 	self:setState({
 		Arcs = {},
 	})
-
 end
 
 function PacketChart:didMount()
 	self.props.Signals.ProfilerFrameSelected:Connect(function(FrameData)
 		local ArcData = {}
 
-		for _, Packet in next, FrameData.Packets do
-			local RemoteName = GetRemoteName(Packet.Remote, Packet.Data[1])
-			local PacketSize = Packet.Size
+		for _, Packet in FrameData.Packets do
+			local RemoteData = GetRemoteData(Packet.Remote, Packet.Data[1])
+			if typeof(RemoteData) == "string" then
+				local RemoteName = RemoteData
+				local PacketSize = Packet.Size
 
-			if not ArcData[RemoteName] then
-				ArcData[RemoteName] = {
-					Size = 0,
-					Data = "",
+				if not ArcData[RemoteName] then
+					ArcData[RemoteName] = {
+						Size = 0,
+						Data = {},
+					}
+				end
+				ArcData[RemoteName].Size += PacketSize
+
+				local PlacementIndex = #ArcData[RemoteName].Data + 1
+				ArcData[RemoteName].Data[PlacementIndex] = {
+					Name = `Remote call {PlacementIndex}:`,
+					Packet = `{Packet.Data and TableToSyntaxString(Packet.Data) or "[None]"}`
 				}
+			else
+				for _, RemoteCall in RemoteData do
+					local RemoteName = RemoteCall.Name
+					local PacketSize = PacketSizeCounter.GetPacketSize({
+						RunContext = Packet.RunContext,
+						RemoteType = "RemoteEvent",
+						PacketData = RemoteCall.Data,
+					}) - PacketSizeCounter.BaseRemoteOverhead
+
+					if Packet.RunContext == "Client" then
+						PacketSize -= PacketSizeCounter.ClientToServerOverhead
+					end
+
+					if not ArcData[RemoteName] then
+						ArcData[RemoteName] = {
+							Size = 0,
+							Data = {},
+						}
+					end
+					ArcData[RemoteName].Size += PacketSize
+
+					local PlacementIndex = #ArcData[RemoteName].Data + 1
+					ArcData[RemoteName].Data[PlacementIndex] = {
+						Name = RemoteCall.Name,
+						Packet = TableToSyntaxString(RemoteCall.Data, true)
+					}
+				end
 			end
-			ArcData[RemoteName].Size += PacketSize
-			ArcData[RemoteName].Data ..= "Packet data: " .. (Packet.Data and TableToSyntaxString(Packet.Data) or "[None]") .. "\n"
 		end
 
 		local Arcs = {}
 		local TotalSize = FrameData.TotalSize
-		for RemoteName, RemoteData in next, ArcData do
+		for RemoteName, RemoteData in ArcData do
 			local Percent = RemoteData.Size / TotalSize
 			local Color = GetRemoteColor()
 			table.insert(Arcs, {
@@ -225,7 +140,7 @@ function PacketChart:didMount()
 				DataSize = RemoteData.Size,
 				Percent = Percent * 100,
 				Color = Color,
-				RemoteData = string.sub(RemoteData.Data, 1, -2),
+				RemoteData = RemoteData.Data,
 			})
 		end
 
@@ -265,87 +180,136 @@ function PacketChart:render()
 		}
 	})[Packages.IsPlugin and "Plugin" or "Client"], {
 		Holder = StudioTheme(function(Theme)
-			return Roact.createElement("Frame", {
-				BackgroundTransparency = 1,
-				AnchorPoint = Packages.IsPlugin and Vector2.new() or Vector2.new(1, 0),
-				Position = Packages.IsPlugin and UDim2.new() or UDim2.new(1, 0, 0, 60),
-				Size = Packages.IsPlugin and UDim2.fromScale(1, 1) or UDim2.fromOffset(450, 180),
-				AutomaticSize = Packages.IsPlugin and Enum.AutomaticSize.None or Enum.AutomaticSize.Y,
-			}, {
-				Background = Roact.createElement("Frame", {
-					BackgroundColor3 = Theme:GetColor("MainBackground"),
-					BorderSizePixel = 0,
-					ZIndex = 0,
-					Size = UDim2.fromScale(1, 1),
-				}),
-				BackgroundCircle = Roact.createElement("Frame", {
+			return ChartResize(function(ResizeData)
+				return Roact.createElement("Frame", {
 					BackgroundTransparency = 1,
-					Size = UDim2.fromOffset(PIE_CHART_SIZE, PIE_CHART_SIZE),
-					Visible = not IsEditMode,
-					Position = UDim2.fromOffset(4, 4),
+					AnchorPoint = Packages.IsPlugin and Vector2.new() or Vector2.new(1, 0),
+					Position = Packages.IsPlugin and UDim2.new() or UDim2.new(1, 0, 0, 61),
+					Size = Packages.IsPlugin and UDim2.fromScale(1, 1) or ResizeData.UISize,
+					[Roact.Ref] = not Packages.IsPlugin and ResizeData.SetSizeTarget or nil,
 				}, {
-					-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
-					BackgroundUI = Roact.createElement("Frame", {
-						BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
+					Background = Roact.createElement("Frame", {
+						BackgroundColor3 = Theme:GetColor("MainBackground"),
+						BorderSizePixel = 0,
+						ZIndex = 0,
 						Size = UDim2.fromScale(1, 1),
-						Visible = #self.state.Arcs > 0,
 					}, {
-						UICorner = Roact.createElement("UICorner", {
-							CornerRadius = UDim.new(0, 4),
+						Notches = Roact.createElement("ImageLabel", {
+							AnchorPoint = Vector2.new(0, 1),
+							BackgroundTransparency = 1,
+							Image = "rbxassetid://18701486909",
+							ImageColor3 = Theme:GetColor("BrightText"),
+							ImageTransparency = 0.5,
+							Position = UDim2.fromScale(0, 1),
+							Size = UDim2.fromOffset(16, 16),
+						})
+					}),
+					UIStroke = Roact.createElement("UIStroke", {
+						Color = Theme:GetColor("DropShadow"),
+						Thickness = 1,
+					}),
+					BackgroundCircle = Roact.createElement("Frame", {
+						BackgroundTransparency = 1,
+						Size = UDim2.fromOffset(PIE_CHART_SIZE, PIE_CHART_SIZE),
+						Visible = not IsEditMode,
+						Position = UDim2.fromOffset(8, 8),
+					}, {
+						-- Creating a separate background UI to avoid updating the pie chart when studio theme updates
+						BackgroundUI = Roact.createElement("Frame", {
+							BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
+							Size = UDim2.fromScale(1, 1),
+							Visible = #self.state.Arcs > 0,
+						}, {
+							UIStroke = Roact.createElement("UIStroke", {
+								Color = Theme:GetColor("DropShadow"),
+								LineJoinMode = Enum.LineJoinMode.Round,
+								Transparency = 0.5,
+							}),
+							UICorner = Roact.createElement("UICorner", {
+								CornerRadius = UDim.new(0, 4),
+							}),
 						}),
-						UIStroke = Roact.createElement("UIStroke", {
-							Color = Theme:GetColor("Separator"),
-							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						PacketCircle = Roact.createElement(PacketCircleArcs, {
+							Arcs = self.state.Arcs,
+							PluginMouse = self.props.PluginMouse,
 						}),
 					}),
-					PacketCircle = Roact.createElement(PacketCircleArcs, {
-						Arcs = self.state.Arcs,
-					}),
-				}),
-				DataList = Roact.createElement("ScrollingFrame", {
-					BackgroundColor3 = Theme:GetColor("MainBackground"),
-					Size = UDim2.new(1, -PIE_CHART_SIZE - DATA_LIST_OFFSET, 1, 0),
-					Position = UDim2.fromScale(1, 0),
-					AnchorPoint = Vector2.new(1, 0),
-					AutomaticCanvasSize = Enum.AutomaticSize.Y,
-					CanvasSize = UDim2.new(),
-					BorderSizePixel = 0,
-					Visible = not IsEditMode,
+					DataList = Roact.createElement("ScrollingFrame", {
+						BackgroundColor3 = Theme:GetColor("MainBackground"),
+						Size = UDim2.new(1, -PIE_CHART_SIZE - DATA_LIST_OFFSET - 1, 1, -1),
+						Position = UDim2.new(1, -1, 0, 0),
+						AnchorPoint = Vector2.new(1, 0),
+						AutomaticCanvasSize = Enum.AutomaticSize.Y,
+						CanvasSize = UDim2.new(),
+						BorderSizePixel = 0,
+						BackgroundTransparency = 1,
+						Visible = not IsEditMode,
+						ZIndex = 2,
 
-					BottomImage = "rbxassetid://5234388158",
-					MidImage = "rbxassetid://5234388158",
-					TopImage = "rbxassetid://5234388158",
-					ScrollBarImageColor3 = Theme:GetColor("Light"),
-					ScrollBarThickness = 6,
-				}, {
-					UIListLayout = Roact.createElement("UIListLayout", {
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						FillDirection = Enum.FillDirection.Vertical,
-						HorizontalAlignment = Enum.HorizontalAlignment.Left,
-						VerticalAlignment = Enum.VerticalAlignment.Top,
-						[Roact.Change.AbsoluteContentSize] = function(Rbx)
-							Rbx.Parent.CanvasSize = UDim2.fromOffset(0, Rbx.AbsoluteContentSize.Y)
-						end
+						BottomImage = "rbxassetid://5234388158",
+						MidImage = "rbxassetid://5234388158",
+						TopImage = "rbxassetid://5234388158",
+						ScrollBarImageColor3 = Theme:GetColor("Light"),
+						ScrollBarThickness = SCROLLBAR_THICKNESS,
+						[Roact.Change.AbsoluteCanvasSize] = function(Rbx)
+							self.SetScrollBarChanged({
+								Size = Rbx.AbsoluteSize.Y,
+								Visible = Rbx.AbsoluteSize.Y < Rbx.AbsoluteCanvasSize.Y
+							})
+						end,
+						[Roact.Change.AbsoluteSize] = function(Rbx)
+							self.SetScrollBarChanged({
+								Size = Rbx.AbsoluteSize.Y,
+								Visible = Rbx.AbsoluteSize.Y < Rbx.AbsoluteCanvasSize.Y
+							})
+						end,
+					}, {
+						UIListLayout = Roact.createElement("UIListLayout", {
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							FillDirection = Enum.FillDirection.Vertical,
+							HorizontalAlignment = Enum.HorizontalAlignment.Left,
+							VerticalAlignment = Enum.VerticalAlignment.Top,
+							[Roact.Change.AbsoluteContentSize] = function(Rbx)
+								Rbx.Parent.CanvasSize = UDim2.fromOffset(0, Rbx.AbsoluteContentSize.Y)
+							end
+						}),
+						Items = Roact.createElement(PacketChartItems, {
+							Arcs = self.state.Arcs,
+							ScrollBarChanged = self.ScrollBarChanged,
+						}),
+						UIPadding = Roact.createElement("UIPadding", {
+							PaddingTop = UDim.new(0, 8),
+							PaddingBottom = UDim.new(0, 8),
+						}),
 					}),
-					Items = Roact.createElement(DataChartItems, {
-						Arcs = self.state.Arcs,
-					})
-				}),
-				EditModeNotifier = Roact.createElement("TextLabel", {
-					AutoLocalize = false,
-					Size = UDim2.fromScale(1, 1),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					BackgroundTransparency = 1,
-					Text = "Start session to begin",
-					TextColor3 = Theme:GetColor("WarningText"),
-					TextSize = 20,
-					Font = Enum.Font.SourceSans,
-					TextXAlignment = Enum.TextXAlignment.Center,
-					TextYAlignment = Enum.TextYAlignment.Center,
-					Visible = IsEditMode,
-				}),
-			})
+					EditModeNotifier = Roact.createElement("TextLabel", {
+						AutoLocalize = false,
+						Size = UDim2.fromScale(1, 1),
+						Position = UDim2.fromScale(0.5, 0.5),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						BackgroundTransparency = 1,
+						Text = "Start session to begin",
+						TextColor3 = Theme:GetColor("WarningText"),
+						TextSize = 20,
+						Font = Enum.Font.SourceSans,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextYAlignment = Enum.TextYAlignment.Center,
+						Visible = IsEditMode,
+					}),
+					ScrollBarOutline = Roact.createElement("Frame", {
+						BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
+						BorderSizePixel = 0,
+						Size = self.ScrollBarChanged:map(function(Data)
+							return UDim2.fromOffset(SCROLLBAR_THICKNESS + 2, Data.Size)
+						end),
+						Position = UDim2.new(1, 0, 0, 0),
+						AnchorPoint = Vector2.new(1, 0),
+						Visible = self.ScrollBarChanged:map(function(ScrollBarChanged)
+							return ScrollBarChanged.Visible
+						end),
+					}),
+				})
+			end)
 		end)
 	})
 end

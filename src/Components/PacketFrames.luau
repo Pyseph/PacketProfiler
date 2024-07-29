@@ -12,6 +12,7 @@ local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 
 local StudioTheme = require(Components.StudioTheme)
 local CircularBuffer = require(Modules.CircularBuffer)
+local PacketFrame = require(Components.PacketFrame)
 
 local MAX_FRAMES = 256
 local TOOLTIP_WIDTH = 200
@@ -21,64 +22,11 @@ local REMOTE_FUNCTION_EVENT_NAME = "RemoteFunctionEvent.profiler"
 local GuiInset = GuiService:GetGuiInset()
 
 local PacketFrames = Roact.Component:extend("PacketFrames")
-local PacketFrame = Roact.Component:extend("PacketFrame")
 
 local IsEditMode = not RunService:IsRunning()
 local RemoteContext = RunService:IsClient() and "OnClientEvent" or "OnServerEvent"
 
 local RemoteFunctionEvent = ReplicatedStorage:FindFirstChild(REMOTE_FUNCTION_EVENT_NAME, true)
-
-function PacketFrame:render()
-	local props = self.props
-	return Roact.createElement("ImageLabel", {
-		Size = props.PacketsChanged:map(function(Packets)
-			local FrameData = Packets[props.Index]
-			if not FrameData then
-				return Roact.Constant.SkipBindingUpdate
-			end
-
-			local FrameScale = math.min(FrameData.TotalSize / self.props.MaxFrameSize, 1)
-			local FrameSize = UDim2.fromScale(1 / MAX_FRAMES, FrameScale)
-			if FrameSize == self.PreviousFrameSize then
-				return Roact.Constant.SkipBindingUpdate
-			end
-
-			self.PreviousFrameSize = FrameSize
-			return FrameSize
-		end),
-		Image = "rbxassetid://10370998310",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(1 - (props.Index / MAX_FRAMES), 1),
-		BorderSizePixel = 0,
-		--[[
-		BackgroundColor3 = props.PacketsChanged:map(function(Packets)
-			local FrameData = Packets[props.Index]
-			if not FrameData then
-				return Roact.Constant.SkipBindingUpdate
-			end
-
-			local FrameScale = math.min(FrameData.TotalSize / self.props.MaxFrameSize, 1)
-			local FrameColor =Color3.fromHex("#93ff1f"):Lerp(Color3.fromHex("#ed1c1c"), FrameScale)
-			if FrameColor == self.PreviousFrameColor then
-				return Roact.Constant.SkipBindingUpdate
-			end
-
-			self.PreviousFrameColor = FrameColor
-			return FrameColor
-		end),
-		--]]
-		Visible = props.PacketsChanged:map(function(Packets)
-			local IsVisible = Packets[props.Index] ~= nil
-			if IsVisible == self.PreviousIsVisible then
-				return Roact.Constant.SkipBindingUpdate
-			end
-
-			self.PreviousIsVisible = IsVisible
-			return IsVisible
-		end),
-		BorderColor3 = Color3.new(1, 1, 1),
-	})
-end
 
 function PacketFrames:init()
 	self.ProfilerBackgroundRef = Roact.createRef()
@@ -115,6 +63,7 @@ function PacketFrames:init()
 			Remote = Remote,
 			Data = RunService:IsClient() and {FirstArgument, ...} or {...},
 			Size = PacketSize,
+			RunContext = RunService:IsClient() and "Client" or "Server",
 		})
 	end
 
@@ -194,6 +143,8 @@ function PacketFrames:init()
 		self.UpdateMouseData(-1, -1, false)
 		self.SetMouseOver(false)
 	end
+
+	self.TooltipSize, self.SetTooltipSize = Roact.createBinding(Vector2.zero)
 end
 
 function PacketFrames:didMount()
@@ -209,11 +160,7 @@ function PacketFrames:didMount()
 		}
 
 		task.spawn(function()
-			if not self.props.Enabled:getValue() then
-				self.props.OnPacketProfilerEnabled:Wait()
-			end
-
-			for _, Object in next, game:GetDescendants() do
+			for _, Object in game:GetDescendants() do
 				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
 					Object[RemoteContext]:Connect(function(...)
 						self.RemoteCallback(Object, ...)
@@ -271,6 +218,7 @@ function PacketFrames:render()
 			Index = Index,
 			PacketsChanged = self.PacketsChanged,
 			MaxFrameSize = self.props.MaxFrameSize,
+			MaxFrames = MAX_FRAMES,
 		})
 	end
 
@@ -323,10 +271,25 @@ function PacketFrames:render()
 				BackgroundColor3 = Theme:GetColor("Dropdown"),
 				BorderColor3 = Theme:GetColor("Border"),
 				Position = self.MousePosition:map(function(MousePosition)
-					return UDim2.fromOffset(MousePosition.X, MousePosition.Y + (TOOLTIP_HEIGHT_OFFSET / 2))
+					local Camera = workspace.CurrentCamera
+					local ViewportSize = Camera and Camera.ViewportSize or Vector2.new(0, 0)
+					local TooltipSize = self.TooltipSize:getValue()
+
+					return UDim2.fromOffset(
+						math.min(MousePosition.X, ViewportSize.X - TooltipSize.X),
+						MousePosition.Y + (TOOLTIP_HEIGHT_OFFSET / 2)
+					)
 				end),
 				Visible = self.MouseOver,
 				ZIndex = 2,
+				[Roact.Change.AbsoluteSize] = function(Rbx)
+					self.SetTooltipSize(Rbx.AbsoluteSize)
+				end,
+				[Roact.Ref] = function(Rbx)
+					if Rbx then
+						self.SetTooltipSize(Rbx.AbsoluteSize)
+					end
+				end,
 			}, {
 				UIListLayout = Roact.createElement("UIListLayout", {}),
 				FrameLabel = Roact.createElement("TextLabel", {

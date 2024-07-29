@@ -29,6 +29,7 @@ function MainPlugin:init()
 		self.props.PacketChart:SetActive(self.IsPacketChartEnabled)
 	end
 
+	self.Connections = {}
 	self.Signals = {
 		ProfilerFrameSelected = Signal.new(),
 		ProfilerPaused = Signal.new(),
@@ -58,10 +59,10 @@ end
 
 function MainPlugin:didMount()
 	if Packages.IsPlugin then
-		self.PacketProfilerClick = self.props.PacketProfiler.Click:Connect(self.OnPacketProfilerClicked)
-		self.PacketChartClick = self.props.PacketChart.Click:Connect(self.OnPacketChartClicked)
+		table.insert(self.Connections, self.props.PacketProfiler.Click:Connect(self.OnPacketProfilerClicked))
+		table.insert(self.Connections, self.props.PacketChart.Click:Connect(self.OnPacketChartClicked))
 	else
-		UserInputService.InputBegan:Connect(function(InputObject)
+		table.insert(self.Connections, UserInputService.InputBegan:Connect(function(InputObject)
 			if not UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
 				return
 			end
@@ -72,11 +73,15 @@ function MainPlugin:didMount()
 				self.ProfilerPaused = not self.ProfilerPaused
 				self.Signals.ProfilerPaused:Fire(self.ProfilerPaused)
 			end
-		end)
+		end))
 
-		self.Signals.ProfilerFrameSelected:Connect(function()
+		table.insert(self.Connections, self.Signals.ProfilerFrameSelected:Connect(function(FrameData)
+			if #FrameData.Packets == 0 then
+				self.OnPacketChartClicked(false)
+				return
+			end
 			self.OnPacketChartClicked(true)
-		end)
+		end))
 	end
 end
 
@@ -91,13 +96,16 @@ function MainPlugin:render()
 			Enabled = self.IsPacketChartEnabled,
 			OnEnabled = self.OnPacketChartEnabled,
 			Signals = self.Signals,
+			PluginMouse = Plugin and Plugin:GetMouse() or nil,
 		}),
 	})
 end
 
 function MainPlugin:willUnmount()
-	self.PacketProfilerClick:Disconnect()
-	self.PacketChartClick:Disconnect()
+	for _, Connection in self.Connections do
+		Connection:Disconnect()
+	end
+	table.clear(self.Connections)
 end
 
 return MainPlugin

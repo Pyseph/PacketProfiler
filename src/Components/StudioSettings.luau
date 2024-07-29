@@ -145,7 +145,7 @@ else
 		ScriptLuauKeyword = Color3.fromHex("#c678dd"),
 		ScriptFunctionName = Color3.fromHex("#8cd1ff"),
 		ScriptTodo = Color3.fromHex("#666666"),
-		ScriptBracket = Color3.fromHex("#cccccc"),
+		ScriptBracket = Color3.fromHex("#ffd700"),
 		AttributeCog = Color3.fromHex("#aaaaaa"),
 	}
 
