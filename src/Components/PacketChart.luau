@@ -50,8 +50,8 @@ else
 	RemoteNameLabeler = require(RemoteNameModule)
 end
 
-local function GetRemoteData(RemoteObject: RemoteEvent, FirstArgument: any?): {{Name: string, Arguments: {any}}} | string
-	local RemoteData = RemoteNameLabeler and RemoteNameLabeler(RemoteObject, FirstArgument)
+local function GetRemoteData(RemoteObject: RemoteEvent, ...: any): {{Name: string, Arguments: {any}}} | string
+	local RemoteData = RemoteNameLabeler and RemoteNameLabeler(RemoteObject, ...)
 	if not RemoteData then
 		local RemoteName = RemoteObject.Name
 		return `{RemoteObject.Parent}.{RemoteName}`
@@ -82,7 +82,7 @@ function PacketChart:didMount()
 		local ArcData = {}
 
 		for _, Packet in FrameData.Packets do
-			local RemoteData = GetRemoteData(Packet.Remote, Packet.Data[1])
+			local RemoteData = GetRemoteData(Packet.Remote, Packet.RawData)
 			if typeof(RemoteData) == "string" then
 				local RemoteName = RemoteData
 				local PacketSize = Packet.Size

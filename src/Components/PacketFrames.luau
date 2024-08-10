@@ -64,6 +64,7 @@ function PacketFrames:init()
 		table.insert(self.CurrentFrame.Packets, {
 			Remote = Remote,
 			Data = RunService:IsClient() and {FirstArgument, ...} or {...},
+			RawData = {FirstArgument, ...},
 			Size = PacketSize,
 			RunContext = RunService:IsClient() and "Client" or "Server",
 		})

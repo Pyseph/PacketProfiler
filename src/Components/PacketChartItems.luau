@@ -146,7 +146,7 @@ function DataChartItem:render()
 			Container = Roact.createElement("Frame", {
 				AutomaticSize = Enum.AutomaticSize.Y,
 				Size = self.props.ScrollBarChanged:map(function(Data)
-					return UDim2.new(1, Data.Visible and -6 or 0, 0, 0)
+					return UDim2.new(1, Data.Visible and -12 or 0, 0, 0)
 				end),
 				Position = UDim2.fromOffset(8, 24),
 				Transparency = 1,

@@ -2,8 +2,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 
-local GUI_INSET = GuiService:GetGuiInset()
-
 local PacketProfiler = script.Parent.Parent
 local Modules = PacketProfiler.Modules
 local Packages = require(Modules.Packages)
@@ -60,8 +58,10 @@ function ChartResize:init()
 			table.clear(self.Connections)
 
 			table.insert(self.Connections, RunService.RenderStepped:Connect(function()
-				local Mouse = UserInputService:GetMouseLocation() - GUI_INSET
-				local Position = Rbx.AbsolutePosition
+				local GUI_INSET = GuiService:GetGuiInset()
+
+				local Mouse = UserInputService:GetMouseLocation()
+				local Position = Rbx.AbsolutePosition + GUI_INSET
 				local Size = Rbx.AbsoluteSize
 
 				local BottomPosition = Position.Y + Size.Y + EdgeSize
@@ -150,13 +150,17 @@ function ChartResize:render()
 end
 
 function ChartResize:willUnmount()
-	self.StopResizing()
-
-	for _, Connection in self.Connections do
-		Connection:Disconnect()
+	if self.StopResizing then
+		self.StopResizing()
 	end
 
-	table.clear(self.Connections)
+	if self.Connections then
+		for _, Connection in self.Connections do
+			Connection:Disconnect()
+		end
+
+		table.clear(self.Connections)
+	end
 end
 
 local function ChartResizeInit(PacketChart)
