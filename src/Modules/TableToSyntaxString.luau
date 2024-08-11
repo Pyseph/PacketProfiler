@@ -170,10 +170,11 @@ local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, DepthDat
 		Index += 1
 	end
 
-	local Bracket = Depth == 1 and "" or c["}"]
+	local StartBracket = Depth == 1 and "" or c["{"]
+	local EndBracket = Depth == 1 and "" or c["}"]
 	local NewLine = Depth == 1 and "" or `\n`
 	local Result = table.concat(Lines, "")
-	return IsEmpty and `{Result}{Bracket}` or `{Result}{NewLine}{TrailingTab}{Bracket}`
+	return IsEmpty and `{StartBracket}{Result}{EndBracket}` or `{StartBracket}{Result}{NewLine}{TrailingTab}{EndBracket}`
 end
 
 return TableToSyntaxString
