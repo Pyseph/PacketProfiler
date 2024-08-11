@@ -82,7 +82,7 @@ function PacketChart:didMount()
 		local ArcData = {}
 
 		for _, Packet in FrameData.Packets do
-			local RemoteData = GetRemoteData(Packet.Remote, Packet.RawData)
+			local RemoteData = GetRemoteData(Packet.Remote, unpack(Packet.RawData))
 			if typeof(RemoteData) == "string" then
 				local RemoteName = RemoteData
 				local PacketSize = Packet.Size
@@ -106,7 +106,7 @@ function PacketChart:didMount()
 					local PacketSize = PacketSizeCounter.GetPacketSize({
 						RunContext = Packet.RunContext,
 						RemoteType = "RemoteEvent",
-						PacketData = RemoteCall.Data,
+						PacketData = RemoteCall.Arguments,
 					}) - PacketSizeCounter.BaseRemoteOverhead
 
 					if Packet.RunContext == "Client" then
@@ -115,7 +115,7 @@ function PacketChart:didMount()
 
 					if not ArcData[RemoteName] then
 						ArcData[RemoteName] = {
-							Size = 0,
+							Size = PacketSizeCounter.BaseRemoteOverhead,
 							Data = {},
 						}
 					end
@@ -124,7 +124,7 @@ function PacketChart:didMount()
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
 						Name = RemoteCall.Name,
-						Packet = TableToSyntaxString(RemoteCall.Data, true)
+						Packet = TableToSyntaxString(RemoteCall.Arguments, true)
 					}
 				end
 			end
