@@ -50,7 +50,7 @@ else
 	RemoteNameLabeler = require(RemoteNameModule)
 end
 
-local function GetRemoteData(RemoteObject: RemoteEvent, ...: any): {{Name: string, Arguments: {any}}} | string
+local function GetRemoteData(RemoteObject: RemoteEvent, ...: any): {{Name: string, Arguments: {any}, ShowDecompressedSize: boolean? }} | string
 	local RemoteData = RemoteNameLabeler and RemoteNameLabeler(RemoteObject, ...)
 	if not RemoteData then
 		local RemoteName = RemoteObject.Name
@@ -124,7 +124,7 @@ function PacketChart:didMount()
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
 						Name = RemoteCall.Name,
-						Packet = TableToSyntaxString(RemoteCall.Arguments, true)
+						Packet = TableToSyntaxString(RemoteCall.Arguments, not RemoteCall.ShowDecompressedSize)
 					}
 				end
 			end
