@@ -7,6 +7,14 @@ local Packages = require(Modules.Packages)
 local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 local StudioSettings = require(Components.StudioSettings)
 
+local SPECIAL_CHARS = {["\a"] = "\\a", ["\b"] = "\\b", ["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v", ["\0"] = "\\0"}
+local KEYWORDS = { ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true, ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true, ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true, ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true, ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true, ["while"] = true, ["continue"] = true}
+local RICH_TEXT_ESCAPES = {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ["\""] = "&quot;", ["'"] = "&apos;"}
+
+local VALID_VARIABLE = "^[_%a][_%w]*$"
+local CONTROL_CHARS = "[%c%z]"
+local RICH_TEXT_CHARS = "[%&%<%>%\"%']"
+
 local function GetByteSize(Value: any): string
 	local ValueSize = PacketSizeCounter.GetDataByteSize(Value)
 	if ValueSize < 1000 then
@@ -15,15 +23,6 @@ local function GetByteSize(Value: any): string
 		return string.format("%.3f kilobytes", ValueSize / 1000)
 	end
 end
-
-local SpecialCharacters = {["\a"] = "\\a", ["\b"] = "\\b", ["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v", ["\0"] = "\\0"}
-local Keywords = { ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true, ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true, ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true, ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true, ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true, ["while"] = true, ["continue"] = true}
-local RichTextEscapes = {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ["\""] = "&quot;", ["'"] = "&apos;"}
-
-local VALID_VARIABLE = "^[_%a][_%w]*$"
-local CONTROL_CHARS = "[%c%z]"
-local NO_TRAILING = "^%s*(.-)%s*$"
-local RICH_TEXT_CHARS = "[%&%<%>%\"%']"
 
 local StyleGuideColorEnums = {
 	string = "ScriptString",
@@ -67,8 +66,8 @@ local c = {
 }
 
 local function CleanupString(String)
-	local NoSpecialChars = string.gsub(String, CONTROL_CHARS, SpecialCharacters)
-	local NoRichText = string.gsub(NoSpecialChars, RICH_TEXT_CHARS, RichTextEscapes)
+	local NoSpecialChars = string.gsub(String, CONTROL_CHARS, SPECIAL_CHARS)
+	local NoRichText = string.gsub(NoSpecialChars, RICH_TEXT_CHARS, RICH_TEXT_ESCAPES)
 	return NoRichText
 end
 
@@ -80,7 +79,7 @@ local function GetHierarchy(Object)
 		local NextObject = Object.Parent
 		NotDone = NextObject and NextObject.Parent and NextObject ~= game
 		local ObjName = CleanupString(Object.Name)
-		if Keywords[ObjName] or not string.match(ObjName, VALID_VARIABLE) then
+		if KEYWORDS[ObjName] or not string.match(ObjName, VALID_VARIABLE) then
 			ObjName = `{c["["]}{Syntax(`&quot;{ObjName}&quot;`, "string")}{c["]"]}`
 		else
 			ObjName = `{NotDone and c["."] or ""}{Syntax(ObjName, "text")}`
@@ -117,64 +116,73 @@ local function SerializeType(Value, Class)
 		return Syntax(tostring(Value), Class)
 	end
 end
-local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, DepthData, Path)
+local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, PreviousDepth)
 	IgnoredTables = IgnoredTables or {}
 	local CyclicData = IgnoredTables[Table]
 	if CyclicData then
 		-- Remotes cant pass cyclic tables, but I'm keeping it just in case
 		return Syntax("&quot;[Cyclic reference]&quot;", "string")
 	end
+	IgnoredTables[Table] = true
 
-	Path = Path or "ROOT"
-	DepthData = DepthData or {0, Path}
-	local Depth = DepthData[1] + 1
-	DepthData[1] = Depth
-	DepthData[2] = Path
+	local ShowBytes = DontShowBytes
+	local Depth = (PreviousDepth or 0) + 1
 
-	IgnoredTables[Table] = DepthData
 	local Tab = string.rep("    ", Depth - 1)
 	local TrailingTab = string.rep("    ", Depth - 2)
-	local Lines = {Depth == 1 and "" or c["{"]}
+	local Lines = {
+		Depth ~= 1 and c["{"] or "",
+	}
 
+	local IsEmpty = next(Table) == nil
 	local HasOrder = true
-	local Index = 1
 
-	local IsEmpty = true
+	local Index = 1
 	for Key, Value in Table do
-		IsEmpty = false
 		if Index ~= Key then
 			HasOrder = false
 		end
 
-		local KeyClass, ValueClass = typeof(Key), typeof(Value)
-		local HasBrackets = false
+		local KeyClass = typeof(Key)
+		local ValueClass = typeof(Value)
 
-		local KeySize = (KeyClass ~= "table" and not DontShowBytes) and `: {Syntax(GetByteSize(Key), "bytesize")} ` or ""
-		local ValueSize = (ValueClass ~= "table" and not DontShowBytes) and `: {Syntax(GetByteSize(Value), "bytesize")}` or ""
+		local KeySize = if KeyClass ~= "table" and ShowBytes then `: {Syntax(GetByteSize(Key), "bytesize")} ` else ""
+		local ValueSize = if ValueClass ~= "table" and ShowBytes then `: {Syntax(GetByteSize(Value), "bytesize")}` else ""
+
 		if KeyClass == "string" then
 			Key = CleanupString(Key)
-			if Keywords[Key] or not string.match(Key, VALID_VARIABLE) then
-				HasBrackets = true
+			if KEYWORDS[Key] or not string.match(Key, VALID_VARIABLE) then
 				Key = string.format(`{c["["]}{Syntax("&quot;%s&quot;", "string")}{c["]"]}`, Key)
 			end
 		else
-			HasBrackets = true
-			local KeyString = KeyClass == "table" and string.gsub(TableToSyntaxString(Key, DontShowBytes, IgnoredTables, {Depth, Path}), NO_TRAILING, "%1") or SerializeType(Key, KeyClass)
+			local KeyString
+			if KeyClass == "table" then
+				KeyString = TableToSyntaxString(Key, DontShowBytes, IgnoredTables, 1)
+			else
+				KeyString = SerializeType(Key, KeyClass)
+			end
 			Key = `{c["["]}{KeyString}{c["]"]}`
 		end
 
-		local LineTab = Depth == 1 and (Index == 1 and "" or "\n") or `\n{Tab}`
-		Value = ValueClass == "table" and TableToSyntaxString(Value, DontShowBytes, IgnoredTables, {Depth, Path}, `{Path}{(HasBrackets and "" or ".")}{Key}`) or SerializeType(Value, ValueClass)
-		Lines[Index] = `{LineTab}{(HasOrder and Value or `{Key}{KeySize}{Syntax("=", "operator")} {Value}`)}{ValueSize}{Syntax(",", "keyword")}`
+		if ValueClass == "table" then
+			Value = TableToSyntaxString(Value, DontShowBytes, IgnoredTables, Depth)
+		else
+			Value = SerializeType(Value, ValueClass)
+		end
 
+		local Prefix = Index == 1 and Tab or `\n{Tab}`
+		Lines[Index] = `{Prefix}{(HasOrder and Value or `{Key}{KeySize} {c["="]} {Value}`)}{ValueSize}{c[","]}`
 		Index += 1
 	end
 
-	local StartBracket = Depth == 1 and "" or c["{"]
-	local EndBracket = Depth == 1 and "" or c["}"]
-	local NewLine = Depth == 1 and "" or `\n`
-	local Result = table.concat(Lines, "")
-	return IsEmpty and `{StartBracket}{Result}{EndBracket}` or `{StartBracket}{Result}{NewLine}{TrailingTab}{EndBracket}`
+	if Depth == 1 then
+		return IsEmpty and "" or table.concat(Lines, "")
+	else
+		return 	if IsEmpty then
+					`{c["{"]}{c["}"]}`
+				else
+					`{c["{"]}\n{table.concat(Lines, "")}{`\n`}{TrailingTab}{c["}"]}`
+	end
 end
 
 return TableToSyntaxString
