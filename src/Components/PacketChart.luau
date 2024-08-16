@@ -101,6 +101,11 @@ function PacketChart:didMount()
 					Packet = `{Packet.Data and TableToSyntaxString(Packet.Data) or "[None]"}`
 				}
 			else
+				local NumRemotes = 0
+				for _ in RemoteData do
+					NumRemotes += 1
+				end
+
 				for _, RemoteCall in RemoteData do
 					local RemoteName = RemoteCall.Name
 					local PacketSize = PacketSizeCounter.GetPacketSize({
@@ -115,11 +120,11 @@ function PacketChart:didMount()
 
 					if not ArcData[RemoteName] then
 						ArcData[RemoteName] = {
-							Size = PacketSizeCounter.BaseRemoteOverhead,
+							Size = 0,
 							Data = {},
 						}
 					end
-					ArcData[RemoteName].Size += PacketSize
+					ArcData[RemoteName].Size += Packet.RawData / NumRemotes
 
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
