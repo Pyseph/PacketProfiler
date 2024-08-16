@@ -125,7 +125,7 @@ local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, Previous
 	end
 	IgnoredTables[Table] = true
 
-	local ShowBytes = DontShowBytes
+	local ShowBytes = not DontShowBytes
 	local Depth = (PreviousDepth or 0) + 1
 
 	local Tab = string.rep("    ", Depth - 1)
