@@ -105,7 +105,7 @@ function PacketChart:didMount()
 				local TotalDecompressedSize = 0
 				local DecompressedSizes = {}
 
-				for i, RemoteCall in RemoteData do
+				for Index, RemoteCall in RemoteData do
 					local DecompressedSize = PacketSizeCounter.GetPacketSize({
 						RunContext = Packet.RunContext,
 						RemoteType = "RemoteEvent",
@@ -116,11 +116,11 @@ function PacketChart:didMount()
 						DecompressedSize -= PacketSizeCounter.ClientToServerOverhead
 					end
 
-					DecompressedSizes[i] = DecompressedSize
+					DecompressedSizes[Index] = DecompressedSize
 					TotalDecompressedSize += DecompressedSize
 				end
 
-				for i, RemoteCall in RemoteData do
+				for Index, RemoteCall in RemoteData do
 					local RemoteName = RemoteCall.Name
 
 					if not ArcData[RemoteName] then
@@ -130,7 +130,7 @@ function PacketChart:didMount()
 						}
 					end
 
-					ArcData[RemoteName].Size += DecompressedSizes[i] / TotalDecompressedSize * Packet.Size
+					ArcData[RemoteName].Size += DecompressedSizes[Index] / TotalDecompressedSize * PacketSize
 
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
