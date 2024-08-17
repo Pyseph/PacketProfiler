@@ -124,7 +124,7 @@ function PacketChart:didMount()
 							Data = {},
 						}
 					end
-					ArcData[RemoteName].Size += Packet.RawData / NumRemotes
+					ArcData[RemoteName].Size += #Packet.RawData / NumRemotes
 
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
