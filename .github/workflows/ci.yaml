@@ -17,11 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Foreman
-        uses: Roblox/setup-foreman@v1
+      - uses: CompeyDev/setup-rokit@v0.1.2
         with:
-          version: "^1.0.0"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v1.0.0 # name of git tag in rokit (uses latest tag by default)
+          path: "." # path to project dir containing a `rokit.toml`, `aftman.toml`, or `foreman.toml` ("." (current dir) by default)
+          cache: false # whether to enable binary caching between runs (false by default)
+          token: ${{ github.token }}
 
       - name: Lint
         run: selene ./src
