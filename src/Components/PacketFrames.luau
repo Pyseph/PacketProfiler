@@ -163,21 +163,35 @@ function PacketFrames:didMount()
 		}
 
 		task.spawn(function()
-			for _, Object in game:GetDescendants() do
-				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
-					table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
-						self.RemoteCallback(Object, ...)
-					end))
+			-- All places that you would "expect" remotes to appear.
+			-- had to add this because game:GetDescendants()
+			local TargetContainers = {
+				game:GetService("ReplicatedStorage"),
+				game:GetService("ReplicatedFirst"),
+				game:GetService("StarterPlayer"),
+				game:GetService("Workspace"),
+				game:GetService("StarterGui"),
+				game:GetService("Players"),
+				if RunService:IsServer() then game:GetService("ServerScriptService") else nil,
+				if RunService:IsServer() then game:GetService("ServerStorage") else nil,
+			}
+			for _, Container in TargetContainers do
+				for _, Object in Container:GetDescendants() do
+					if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
+						table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
+							self.RemoteCallback(Object, ...)
+						end))
+					end
 				end
-			end
 
-			table.insert(self.Cleanup, game.DescendantAdded:Connect(function(Object)
-				if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
-					table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
-						self.RemoteCallback(Object, ...)
-					end))
-				end
-			end))
+				table.insert(self.Cleanup, Container.DescendantAdded:Connect(function(Object)
+					if Object:IsA("RemoteEvent") or Object:IsA("UnreliableRemoteEvent") then
+						table.insert(self.Cleanup, Object[RemoteContext]:Connect(function(...)
+							self.RemoteCallback(Object, ...)
+						end))
+					end
+				end))
+			end
 
 			if RemoteFunctionEvent == nil then
 				local Connection; Connection = ReplicatedStorage.DescendantAdded:Connect(function(Object)
