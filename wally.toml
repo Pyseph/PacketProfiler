@@ -1,6 +1,6 @@
 [package]
 name = "pyseph/packetprofiler"
-version = "2.2.4"
+version = "2.3.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 description = "Remote packet profiler"
