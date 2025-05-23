@@ -64,6 +64,7 @@ local PacketChart = Roact.Component:extend("PacketChart")
 
 function PacketChart:init()
 	self.ArcsUpdated = Signal.new()
+	self.OnArcClicked = Signal.new()
 	self.ChartEnabled, self.SetChartEnabled = Roact.createBinding(false)
 	self.ScrollBarChanged, self.SetScrollBarChanged = Roact.createBinding({
 		Size = 0,
@@ -243,6 +244,9 @@ function PacketChart:render()
 						PacketCircle = Roact.createElement(PacketCircleArcs, {
 							Arcs = self.state.Arcs,
 							PluginMouse = self.props.PluginMouse,
+							OnArcClicked = function(ArcName)
+								self.OnArcClicked:Fire(ArcName)
+							end,
 						}),
 					}),
 					DataList = Roact.createElement("ScrollingFrame", {
@@ -287,6 +291,7 @@ function PacketChart:render()
 						Items = Roact.createElement(PacketChartItems, {
 							Arcs = self.state.Arcs,
 							ScrollBarChanged = self.ScrollBarChanged,
+							OnArcClicked = self.OnArcClicked,
 						}),
 						UIPadding = Roact.createElement("UIPadding", {
 							PaddingTop = UDim.new(0, 8),

@@ -23,7 +23,7 @@ local function CircleArc(props)
 		BackgroundTransparency = 1,
 		Image = "rbxassetid://3587367081",
 		ImageColor3 = props.Highlighted:map(function(Percent)
-			if Percent >= StartPercent and Percent <= EndPercent then
+			if Percent >= StartPercent and Percent < EndPercent then
 				return props.Data.Color:Lerp(Color3.new(1, 1, 1), 0.5)
 			end
 
@@ -50,9 +50,6 @@ local function CircleArc(props)
 				NumberSequenceKeypoint.new(props.Side == "Left" and 0.499 or 0.501, 1),
 				NumberSequenceKeypoint.new(1, 1),
 			}),
-			-- There's a weird bug with UIGradient which causes discoloration,
-			-- but this small offset fixes it
-			--Offset = Vector2.new(0, 0.0002),
 		}),
 	})
 end
@@ -62,6 +59,9 @@ function PacketCircleArcs:init()
 	self.ActualAlpha, self.SetActualAlpha = Roact.createBinding(0)
 	self.MousePosition, self.SetMousePosition = Roact.createBinding(Vector2.zero)
 	self.HighlightedPercent, self.SetHighlightedPercent = Roact.createBinding(-1)
+
+	self.DebugMousePos, self.SetDebugMousePos = Roact.createBinding(UDim2.fromOffset(0, 0))
+	self.ShowDebug, self.SetShowDebug = Roact.createBinding(false)
 
 	local Speed = 2
 	local Mouse = Packages.IsPlugin and self.props.PluginMouse or Players.LocalPlayer:GetMouse()
@@ -85,8 +85,9 @@ function PacketCircleArcs:render()
 
 	self.SetActualAlpha(0)
 
+	local ArcData = {}
 	local NumArcs = #self.props.Arcs
-	for Index, Arc in ipairs(self.props.Arcs) do
+	for Index, Arc in self.props.Arcs do
 		local ZIndex = (NumArcs - Index) + 2
 		local EndPercent = math.min(StartPercent + Arc.Percent, 100)
 
@@ -94,12 +95,19 @@ function PacketCircleArcs:render()
 			break
 		end
 
+		ArcData[Index] = {
+			StartPercent = StartPercent,
+			EndPercent = EndPercent,
+			Color = Arc.Color,
+			Name = Arc.Name,
+		}
+
 		if EndPercent > 50 and StartPercent <= 50 then
 			CircleArcs.Left[Index] = CircleArc({
 				ZIndex = ZIndex,
 				Data = {
 					StartPercent = StartPercent,
-					EndPercent = StartPercent + Arc.Percent,
+					EndPercent = EndPercent,
 					VisiblePercent = 50,
 					Color = Arc.Color,
 				},
@@ -114,7 +122,7 @@ function PacketCircleArcs:render()
 			ZIndex = ZIndex,
 			Data = {
 				StartPercent = StartPercent,
-				EndPercent = StartPercent + Arc.Percent,
+				EndPercent = EndPercent,
 				VisiblePercent = EndPercent,
 				Color = Arc.Color,
 			},
@@ -132,40 +140,49 @@ function PacketCircleArcs:render()
 		Position = UDim2.fromScale(0.5, 0.5),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 
-		[Roact.Event.MouseEnter] = function()
+		[Roact.Event.MouseEnter] = function(Rbx, X, Y)
 			self.MouseOver = true
+			self.SetShowDebug(true)
 		end,
 		[Roact.Event.MouseLeave] = function()
 			self.MouseOver = false
 			self.SetHighlightedPercent(-1)
+			self.SetShowDebug(false)
 		end,
-		[Roact.Event.MouseMoved] = function(Rbx)
+		[Roact.Event.MouseMoved] = function(Rbx, X, Y)
 			if self.MouseOver then
-				local MousePosition = self.MousePosition:getValue()
+				local MousePosition = Vector2.new(X, Y)
 				local Center = Rbx.AbsolutePosition + Rbx.AbsoluteSize/2
-				local Angle = math.deg(math.atan2(MousePosition.Y - Center.Y, MousePosition.X - Center.X)) + 90
+
+				self.SetDebugMousePos(UDim2.fromOffset(X - 1, Y - 1))
+
+				local Angle = math.deg(math.atan2(MousePosition.Y - Center.Y, -(MousePosition.X - Center.X))) + 90
 				if Angle < 0 then
 					Angle += 360
 				end
 
-				local Percent = Angle / 360 * 100
-				self.SetHighlightedPercent(100 - Percent)
+				local Percent = (Angle / 360) * 100
+				self.SetHighlightedPercent(Percent)
 			end
 		end,
-		[Roact.Event.InputEnded] = function()
+		[Roact.Event.InputEnded] = function(_, inputObject)
+			if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 then
+				return
+			end
+			
 			local Percent = self.HighlightedPercent:getValue()
 			if Percent == -1 then
 				return
 			end
 
-			--[[
-			for _, Arc in self.props.Arcs do
-				if Percent >= Arc.StartPercent and Percent <= Arc.StartPercent + Arc.Percent then
-					-- Add future behavior here
+			for Index, Arc in ArcData do
+				if Percent >= Arc.StartPercent and Percent < Arc.EndPercent then
+					if self.props.OnArcClicked then
+						self.props.OnArcClicked(Arc.Name)
+					end
 					break
 				end
 			end
-			]]
 
 			self.SetHighlightedPercent(-1)
 		end,
@@ -185,7 +202,17 @@ function PacketCircleArcs:render()
 			Size = UDim2.fromScale(0.5, 1),
 		}, {
 			Arcs = Roact.createFragment(CircleArcs.Right),
+		}),
+		--[[
+		DebugFrame = Roact.createElement("Frame", {
+			BackgroundColor3 = Color3.new(1, 0, 0),
+			BorderSizePixel = 0,
+			Size = UDim2.fromOffset(4, 4),
+			Position = self.DebugMousePos,
+			Visible = self.ShowDebug,
+			ZIndex = 1000,
 		})
+		]]
 	})
 end
 

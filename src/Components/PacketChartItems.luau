@@ -1,3 +1,5 @@
+local TweenService = game:GetService("TweenService")
+
 local PacketProfiler = script.Parent.Parent
 local Components = PacketProfiler.Components
 local Modules = PacketProfiler.Modules
@@ -22,12 +24,76 @@ local DataChartItem = Roact.Component:extend("DataChartItem")
 function DataChartItem:init()
 	self.RemoteData, self.ShowRemoteData = Roact.createBinding(false)
 	self.Size, self.SetSize = Roact.createBinding(Vector2.zero)
+	self.HighlightTransparency, self.SetHighlightTransparency = Roact.createBinding(1)
+
+	self.HighlightFrame = Roact.createRef()
+	self.FadeInTween = nil
+	self.FadeOutTween = nil
+	self.HighlightTask = nil
+end
+
+function DataChartItem:didMount()
+	if self.props.OnArcClicked then
+		self.ArcClickConnection = self.props.OnArcClicked:Connect(function(arcName)
+			if arcName == self.props.Arc.Name then
+				self.ShowRemoteData(true)
+
+				if self.FadeInTween then
+					self.FadeInTween:Cancel()
+				end
+				if self.FadeOutTween then
+					self.FadeOutTween:Cancel()
+				end
+				if self.HighlightTask then
+					task.cancel(self.HighlightTask)
+				end
+				
+				local highlightFrame = self.HighlightFrame:getValue()
+				if highlightFrame then
+					highlightFrame.BackgroundTransparency = 1
+
+					self.FadeInTween = TweenService:Create(
+						highlightFrame,
+						TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+						{BackgroundTransparency = 0.7}
+					)
+					self.FadeInTween:Play()
+
+					self.HighlightTask = task.delay(0.05 + 0.2, function()
+						self.FadeOutTween = TweenService:Create(
+							highlightFrame,
+							TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+							{BackgroundTransparency = 1}
+						)
+						self.FadeOutTween:Play()
+					end)
+				end
+			end
+		end)
+	end
+end
+
+function DataChartItem:willUnmount()
+	if self.ArcClickConnection then
+		self.ArcClickConnection:Disconnect()
+	end
+	if self.FadeInTween then
+		self.FadeInTween:Cancel()
+	end
+	if self.FadeOutTween then
+		self.FadeOutTween:Cancel()
+	end
+	if self.HighlightTask then
+		task.cancel(self.HighlightTask)
+	end
 end
 
 function DataChartItem:render()
 	local Arc = self.props.Arc
 	local RemoteCalls = {}
 	for Index, RemoteData in self.props.RemoteData do
+		local PacketDisplayText = RemoteData.Packet
+
 		RemoteCalls[Index] = StudioTheme(function(Theme)
 			local TitleIndex = Index * 2
 			local ContainerIndex = Index * 2 + 1
@@ -85,7 +151,7 @@ function DataChartItem:render()
 					AutoLocalize = false,
 					Font = Enum.Font.Code,
 					RichText = true,
-					Text = RemoteData.Packet,
+					Text = PacketDisplayText,
 					TextColor3 = Theme:GetColor("BrightText"),
 					TextSize = 12,
 					TextXAlignment = Enum.TextXAlignment.Left,
@@ -114,6 +180,15 @@ function DataChartItem:render()
 			Size = UDim2.new(1, 0, 0, 22),
 			AutomaticSize = Enum.AutomaticSize.Y,
 		}, {
+			HighlightEffect = Roact.createElement("Frame", {
+				BackgroundColor3 = Arc.Color,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				Position = UDim2.fromScale(0, 0),
+				ZIndex = 1,
+				BorderSizePixel = 0,
+				[Roact.Ref] = self.HighlightFrame,
+			}),
 			["Information"] = Roact.createElement("TextButton", {
 				AutoLocalize = false,
 				Font = Enum.Font.SourceSans,
@@ -142,6 +217,7 @@ function DataChartItem:render()
 				ImageColor3 = Theme:GetColor("BrightText"),
 				Size = UDim2.fromOffset(16, 16),
 				Position = UDim2.fromOffset(0, 2),
+				ZIndex = 3,
 			}),
 			Container = Roact.createElement("Frame", {
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -187,6 +263,7 @@ local function DataChartItems(props)
 			Arc = Arc,
 			RemoteData = Arc.RemoteData,
 			ScrollBarChanged = props.ScrollBarChanged,
+			OnArcClicked = props.OnArcClicked,
 		})
 	end
 
