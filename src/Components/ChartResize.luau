@@ -20,6 +20,28 @@ function ChartResize:init()
 
 		local IconResizing = false
 		local IsResizing = false
+		local ResizeTarget = nil
+
+		local function IsResizeTargetVisible()
+			local Current = ResizeTarget
+			if not Current then
+				return false
+			end
+
+			while Current do
+				if Current:IsA("GuiObject") and not Current.Visible then
+					return false
+				end
+
+				if Current:IsA("LayerCollector") and not Current.Enabled then
+					return false
+				end
+
+				Current = Current.Parent
+			end
+
+			return true
+		end
 
 		local DirectionIcons = {
 			SizeWE = "rbxassetid://18699453492",
@@ -48,6 +70,7 @@ function ChartResize:init()
 
 		local EdgeSize = 8
 		function self.SetSizeTarget(Rbx)
+			ResizeTarget = Rbx
 			if not Rbx then
 				return
 			end
@@ -58,6 +81,15 @@ function ChartResize:init()
 			table.clear(self.Connections)
 
 			table.insert(self.Connections, RunService.RenderStepped:Connect(function()
+				if not IsResizeTargetVisible() then
+					if IsResizing then
+						self.StopResizing()
+					else
+						self.RemoveIcon()
+					end
+					return
+				end
+
 				local GUI_INSET = GuiService:GetGuiInset()
 
 				local Mouse = UserInputService:GetMouseLocation()
@@ -85,7 +117,7 @@ function ChartResize:init()
 			end))
 
 			table.insert(self.Connections, UserInputService.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 and IconResizing then
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 and IconResizing and IsResizeTargetVisible() then
 					self.StartResizing()
 				end
 			end))
@@ -110,7 +142,7 @@ function ChartResize:init()
 			UpdateConnection = RunService.RenderStepped:Connect(function()
 				local Delta = UserInputService:GetMouseLocation() - StartMousePosition
 				if IconResizing == "SizeNS" then
-				Delta *= Vector2.new(0, 1)
+					Delta *= Vector2.new(0, 1)
 				elseif IconResizing == "SizeWE" then
 					Delta *= Vector2.new(1, 0)
 				end

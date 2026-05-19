@@ -17,7 +17,7 @@ local function TopbarOptionsButton(props)
 		TextXAlignment = Enum.TextXAlignment.Right,
 		TextYAlignment = Enum.TextYAlignment.Center,
 		Font = Enum.Font.Code,
-		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
+		TextColor3 = props.Theme:GetColor("BrightText"),
 		TextSize = TOPBAR_HEIGHT + 2,
 		BackgroundColor3 = props.Theme:GetColor("ScrollBarBackground"),
 		Size = props.Size,
@@ -56,7 +56,7 @@ function TopbarButtonsGroup:render()
 	return Roact.createElement("TextLabel", {
 		AutoLocalize = false,
 		Text = props.Text,
-		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
+		TextColor3 = props.Theme:GetColor("BrightText"),
 		BackgroundColor3 = self.MouseHovering:map(function(VisibleIndex)
 			return VisibleIndex > 0 and props.Theme:GetColor("Light") or props.Theme:GetColor("ScrollBarBackground")
 		end),

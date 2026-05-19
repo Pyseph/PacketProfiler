@@ -9,7 +9,7 @@ local TOPBAR_HEIGHT = 10
 local function TopbarButton(props)
 	return Roact.createElement("TextButton", {
 		AutoLocalize = false,
-		TextColor3 = props.Theme.Name == "Light" and Color3.new(0, 0, 0) or Color3.new(1, 1, 1),
+		TextColor3 = props.Theme:GetColor("BrightText"),
 		Size = UDim2.fromOffset(0, TOPBAR_HEIGHT),
 		BackgroundColor3 = props.Theme:GetColor("Item"),
 		TextSize = TOPBAR_HEIGHT + 1,
