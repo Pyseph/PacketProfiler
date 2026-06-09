@@ -16,6 +16,7 @@ local PacketChartItems = require(Components.PacketChartItems)
 local ChartResize = require(Components.ChartResize)
 
 local TableToSyntaxString = require(Modules.TableToSyntaxString)
+local Adapters = require(Modules.Adapters)
 
 local GOLDEN_RATIO_CONJUGATE = 0.6180339887498948482045868343
 local PIE_CHART_SIZE = 100
@@ -83,7 +84,12 @@ function PacketChart:didMount()
 		local ArcData = {}
 
 		for _, Packet in FrameData.Packets do
-			local RemoteData = GetRemoteData(Packet.Remote, unpack(Packet.RawData))
+			-- If this RemoteEvent belongs to a batched networking library (e.g. Packet),
+			-- ask its adapter to decode the buffer into named calls. Otherwise fall back
+			-- to the RemoteName.profiler labeler / RemoteEvent name.
+			local RemoteData = (Adapters.IsManaged(Packet.Remote)
+					and Adapters.Decode(Packet.Remote, Packet.RunContext, unpack(Packet.RawData)))
+				or GetRemoteData(Packet.Remote, unpack(Packet.RawData))
 			local PacketSize = Packet.Size
 
 			if typeof(RemoteData) == "string" then
@@ -105,6 +111,7 @@ function PacketChart:didMount()
 			else
 				local TotalDecompressedSize = 0
 				local DecompressedSizes = {}
+				local CallCount = 0
 
 				for Index, RemoteCall in RemoteData do
 					local DecompressedSize = PacketSizeCounter.GetPacketSize({
@@ -117,8 +124,12 @@ function PacketChart:didMount()
 						DecompressedSize -= PacketSizeCounter.ClientToServerOverhead
 					end
 
+					-- Tiny packets can net out to <= 0 once protocol overhead is removed.
+					-- Clamp so totals never go negative (which would skew the split).
+					DecompressedSize = math.max(DecompressedSize, 0)
 					DecompressedSizes[Index] = DecompressedSize
 					TotalDecompressedSize += DecompressedSize
+					CallCount += 1
 				end
 
 				for Index, RemoteCall in RemoteData do
@@ -131,12 +142,31 @@ function PacketChart:didMount()
 						}
 					end
 
-					ArcData[RemoteName].Size += DecompressedSizes[Index] / TotalDecompressedSize * PacketSize
+					-- Attribute the real (compressed) PacketSize across the decoded calls
+					-- by their relative size. When every call rounds to zero, split evenly
+					-- so we never divide by zero (which produced NaN arc percentages).
+					local Share
+					if TotalDecompressedSize > 0 then
+						Share = DecompressedSizes[Index] / TotalDecompressedSize
+					elseif CallCount > 0 then
+						Share = 1 / CallCount
+					else
+						Share = 0
+					end
+					ArcData[RemoteName].Size += Share * PacketSize
+
+					-- Show decoded arguments, and (when an adapter provides it) the raw
+					-- wire bytes too -- so argument-less trigger packets still show data.
+					local Display = TableToSyntaxString(RemoteCall.Arguments, true)
+					if RemoteCall.Raw ~= nil then
+						local RawDisplay = TableToSyntaxString({ RemoteCall.Raw }, true)
+						Display = if Display ~= "" then `{Display}\n{RawDisplay}` else RawDisplay
+					end
 
 					local PlacementIndex = #ArcData[RemoteName].Data + 1
 					ArcData[RemoteName].Data[PlacementIndex] = {
 						Name = RemoteCall.Name,
-						Packet = TableToSyntaxString(RemoteCall.Arguments, true)
+						Packet = Display,
 					}
 				end
 			end
@@ -145,7 +175,7 @@ function PacketChart:didMount()
 		local Arcs = {}
 		local TotalSize = FrameData.TotalSize
 		for RemoteName, RemoteData in ArcData do
-			local Percent = RemoteData.Size / TotalSize
+			local Percent = TotalSize > 0 and (RemoteData.Size / TotalSize) or 0
 			local Color = GetRemoteColor()
 			table.insert(Arcs, {
 				Name = RemoteName,
