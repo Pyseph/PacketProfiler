@@ -12,6 +12,7 @@ local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 
 local StudioTheme = require(Components.StudioTheme)
 local CircularBuffer = require(Modules.CircularBuffer)
+local Adapters = require(Modules.Adapters)
 local PacketFrame = require(Components.PacketFrame)
 
 local MAX_FRAMES = 256
@@ -163,6 +164,12 @@ function PacketFrames:didMount()
 		}
 
 		task.spawn(function()
+			-- Start networking-library adapters (Packet, etc.) as early as possible
+			-- so they can hook logical packets before traffic flows. Adapters mark
+			-- their RemoteEvents as managed and feed decoded calls into RemoteCallback.
+			local AdaptersCleanup = Adapters.Start(RunService:IsClient() and "Client" or "Server")
+			table.insert(self.Cleanup, {Disconnect = AdaptersCleanup})
+
 			-- All places that you would "expect" remotes to appear.
 			-- had to add this because game:GetDescendants()
 			local TargetContainers = {
