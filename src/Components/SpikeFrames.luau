@@ -3,6 +3,7 @@ local RunService = game:GetService("RunService")
 local PacketProfiler = script.Parent.Parent
 local Packages = require(PacketProfiler.Modules.Packages)
 local Vide = require(Packages.Directory.Vide)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local TOOLTIP_WIDTH = 220
 local TOOLTIP_OFFSET = 14
@@ -43,7 +44,7 @@ local function SpikeFrames(props)
 		selectedIndex(0)
 		refresh()
 	end)
-	cleanup(profiler.TopFramesChanged:Connect(refresh))
+	cleanup(Cleanup.disconnect(profiler.TopFramesChanged:Connect(refresh)))
 
 	local function updatePointer(screenX)
 		if background == nil then

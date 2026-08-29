@@ -5,6 +5,7 @@ local Vide = require(Packages.Directory.Vide)
 local AnimatedButton = require(PacketProfiler.Components.AnimatedButton)
 local SpikeInspectorRow = require(PacketProfiler.Components.SpikeInspectorRow)
 local BuildChartData = require(PacketProfiler.Modules.ChartData)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local cleanup = Vide.cleanup
 local create = Vide.create
@@ -35,10 +36,10 @@ local function SpikeInspector(props)
 		frozen(false)
 		refresh(true)
 	end)
-	cleanup(profiler.TopFramesChanged:Connect(refresh))
-	cleanup(profiler.SelectionChanged:Connect(function()
+	cleanup(Cleanup.disconnect(profiler.TopFramesChanged:Connect(refresh)))
+	cleanup(Cleanup.disconnect(profiler.SelectionChanged:Connect(function()
 		selectedFrame(profiler.SelectedFrame)
-	end))
+	end)))
 
 	local function allExpanded()
 		local currentEntries = entries()
@@ -72,6 +73,10 @@ local function SpikeInspector(props)
 		create("UIListLayout")({
 			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+		create("UIPadding")({
+			PaddingLeft = UDim.new(0, 2),
+			PaddingRight = UDim.new(0, 2),
 		}),
 		create("Frame")({
 			BackgroundTransparency = 1,

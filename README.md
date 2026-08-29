@@ -112,7 +112,7 @@ The Studio bridge exposes `RegisterLayer`, `RegisterHook`, `Record`, `RegisterAd
 
 ## In-game profiling
 Sometimes, simply profiling in studio may not be enough. As such, you can use this plugin **in-game**! Simply grab the latest release `.rbxm` file and place it inside `StarterPlayerScripts`. You can then open the UI through `Ctrl + F5`, and pause/unpause through `Ctrl + P`.
-<https://github.com/PysephWasntAvailable/PacketProfiler/releases/>
+<https://github.com/Pyseph/PacketProfiler/releases/>
 
 Alternatively, you can install the in-game profiler through **Wally**:
 <https://wally.run/package/pysephwasntavailable/packetprofiler>
@@ -122,6 +122,6 @@ Alternatively, you can install the in-game profiler through **Wally**:
 ### Method 1: Studio Plugin (Roblox Studio)
 - Install the PacketProfiler Roblox Studio plugin from the [Roblox Studio Plugin page](https://www.roblox.com/library/10332340067/PacketProfiler).
 ### Method 2: Model file (In-game profiler)
-- Download the `rbxm` model file attached to the latest release from the [Releases page](https://github.com/PysephWasntAvailable/PacketProfiler/releases).
+- Download the `rbxm` model file attached to the latest release from the [Releases page](https://github.com/Pyseph/PacketProfiler/releases).
 ### Method 3: Wally (In-game profiler)
 - Add `pysephwasntavailable/packetprofiler@version` to your `wally.toml` file, or grab the command from the [wally.run page](https://wally.run/package/pysephwasntavailable/packetprofiler).

@@ -11,6 +11,7 @@ local PacketChartItems = require(PacketProfiler.Components.PacketChartItems)
 local PacketCircleArcs = require(PacketProfiler.Components.PacketCircleArcs)
 local SpikeInspector = require(PacketProfiler.Components.SpikeInspector)
 local StudioWidget = require(PacketProfiler.Components.StudioWidget)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local PIE_SIZE = 112
 local HEADER_HEIGHT = 36
@@ -40,7 +41,7 @@ local function PacketChart(props)
 	if profiler.SelectedFrame then
 		updateSelection(profiler:GetViewFrame(profiler.SelectedFrame, state.View()))
 	end
-	cleanup(profiler.SelectionChanged:Connect(updateSelection))
+	cleanup(Cleanup.disconnect(profiler.SelectionChanged:Connect(updateSelection)))
 
 	local function title()
 		local layer = state.GetActiveLayer()

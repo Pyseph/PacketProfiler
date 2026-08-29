@@ -1,6 +1,7 @@
 # Rojo
 /*.rbxl*
 /*.rbxm*
+/build/*.rbxm*
 
 # Luau
 sourcemap.json

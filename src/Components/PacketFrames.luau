@@ -3,6 +3,7 @@ local RunService = game:GetService("RunService")
 local PacketProfiler = script.Parent.Parent
 local Packages = require(PacketProfiler.Modules.Packages)
 local Vide = require(Packages.Directory.Vide)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local TimelineRenderer = require(PacketProfiler.Components.TimelineRenderer)
 
@@ -46,9 +47,9 @@ local function PacketFrames(props)
 		read(props.MaxFrameSize)
 		updateBars()
 	end)
-	cleanup(profiler.FrameBatchCommitted:Connect(function(frames)
+	cleanup(Cleanup.disconnect(profiler.FrameBatchCommitted:Connect(function(frames)
 		renderer:CommitBatch(profiler, frames, read(props.View), read(props.MaxFrameSize), read(props.Color))
-	end))
+	end)))
 
 	local function updatePointer(screenX)
 		if background == nil then

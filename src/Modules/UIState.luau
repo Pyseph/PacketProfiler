@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local PacketProfiler = script.Parent.Parent
 local Packages = require(PacketProfiler.Modules.Packages)
 local Vide = require(Packages.Directory.Vide)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local BYTE_SCALES = { 1_000, 10_000, 50_000, 100_000 }
 local SCALE_SETTINGS_KEY = "PacketProfilerViewScales"
@@ -173,23 +174,23 @@ local function UIState(props)
 		end))
 	end
 
-	cleanup(profiler.LayersChanged:Connect(function(layers)
+	cleanup(Cleanup.disconnect(profiler.LayersChanged:Connect(function(layers)
 		state.Layers(layers)
-	end))
-	cleanup(profiler.PauseChanged:Connect(function(paused)
+	end)))
+	cleanup(Cleanup.disconnect(profiler.PauseChanged:Connect(function(paused)
 		state.Paused(paused)
-	end))
-	cleanup(profiler.ViewChanged:Connect(function(view)
+	end)))
+	cleanup(Cleanup.disconnect(profiler.ViewChanged:Connect(function(view)
 		local scales, defaultScale = getViewScaleConfig(profiler, view)
 		state.View(view)
 		state.MaxFrameSize(getScale(viewScales, view, scales, defaultScale))
-	end))
-	cleanup(profiler.SelectionChanged:Connect(function(frame)
+	end)))
+	cleanup(Cleanup.disconnect(profiler.SelectionChanged:Connect(function(frame)
 		local hasPackets = frame ~= nil and frame.PacketCount > 0
 		if hasPackets or not Packages.IsPlugin then
 			state.SetChartEnabled(hasPackets)
 		end
-	end))
+	end)))
 
 	effect(function()
 		if props.PacketProfilerButton then

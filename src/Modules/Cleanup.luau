@@ -1,5 +1,11 @@
 local Cleanup = {}
 
+function Cleanup.disconnect(connection)
+	return function()
+		connection:Disconnect()
+	end
+end
+
 function Cleanup.run(item)
 	local itemType = typeof(item)
 

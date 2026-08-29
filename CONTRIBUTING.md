@@ -15,7 +15,7 @@ There exist different `project.json` files for different purposes:
 - `plugindev.project.json` attempts to sync the code to Roblox Studio for plugin development, but is currently not fully functional
 
 ## Bug Reports & Feature Requests
-Please use the [issue tracker](https://github.com/PysephWasntAvailable/PacketProfiler/issues) to report any bugs or file feature requests.
+Please use the [issue tracker](https://github.com/Pyseph/PacketProfiler/issues) to report any bugs or file feature requests.
 
 ## Developing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.

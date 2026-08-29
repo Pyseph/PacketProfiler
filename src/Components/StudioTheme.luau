@@ -3,13 +3,14 @@ local Packages = require(PacketProfiler.Modules.Packages)
 local Vide = require(Packages.Directory.Vide)
 
 local StudioSettings = require(PacketProfiler.Components.StudioSettings)
+local Cleanup = require(PacketProfiler.Modules.Cleanup)
 
 local function StudioTheme()
 	local revision = Vide.source(0)
 
-	Vide.cleanup(StudioSettings.ThemeChanged:Connect(function()
+	Vide.cleanup(Cleanup.disconnect(StudioSettings.ThemeChanged:Connect(function()
 		revision(revision() + 1)
-	end))
+	end)))
 
 	return function(name)
 		revision()
