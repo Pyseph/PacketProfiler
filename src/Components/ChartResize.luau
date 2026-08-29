@@ -1,204 +1,137 @@
+local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
 
 local PacketProfiler = script.Parent.Parent
-local Modules = PacketProfiler.Modules
-local Packages = require(Modules.Packages)
+local Packages = require(PacketProfiler.Modules.Packages)
+local Vide = require(Packages.Directory.Vide)
 
-local Roact = require(Packages.Directory.Roact)
+local EDGE_SIZE = 8
+local DIRECTION_ICONS = {
+	SizeWE = "rbxassetid://18699453492",
+	SizeNS = "rbxassetid://18700045701",
+	SizeAll = "rbxassetid://18700129047",
+}
 
-local ChartResize = Roact.Component:extend("ChartResize")
+local function ChartResize()
+	local size = Vide.source(UDim2.fromOffset(650, 290))
+	local target
+	local direction
+	local resizing = false
+	local previousIcon = UserInputService.MouseIcon
+	local startSize
+	local startMousePosition
 
-function ChartResize:init()
-	self.Size, self.SetSize = Roact.createBinding(UDim2.fromOffset(650, 290))
-	if not Packages.IsPlugin then
-		self.Connections = {}
-		local PreviousIcon = UserInputService.MouseIcon
-
-		local UpdateConnection
-
-		local IconResizing = false
-		local IsResizing = false
-		local ResizeTarget = nil
-
-		local function IsResizeTargetVisible()
-			local Current = ResizeTarget
-			if not Current then
+	local function isVisible()
+		local current = target
+		if current == nil then
+			return false
+		end
+		while current do
+			if current:IsA("GuiObject") and not current.Visible then
+				return false
+			elseif current:IsA("LayerCollector") and not current.Enabled then
 				return false
 			end
-
-			while Current do
-				if Current:IsA("GuiObject") and not Current.Visible then
-					return false
-				end
-
-				if Current:IsA("LayerCollector") and not Current.Enabled then
-					return false
-				end
-
-				Current = Current.Parent
-			end
-
-			return true
+			current = current.Parent
 		end
+		return true
+	end
 
-		local DirectionIcons = {
-			SizeWE = "rbxassetid://18699453492",
-			SizeNS = "rbxassetid://18700045701",
-			SizeAll = "rbxassetid://18700129047",
-		}
-		function self.AddIcon(Direction)
-			if IsResizing or IconResizing == Direction then
+	local function setDirection(nextDirection)
+		if resizing or direction == nextDirection then
+			return
+		end
+		if direction == nil then
+			previousIcon = UserInputService.MouseIcon
+		end
+		direction = nextDirection
+		UserInputService.MouseIcon = DIRECTION_ICONS[nextDirection]
+	end
+
+	local function clearDirection()
+		if resizing or direction == nil then
+			return
+		end
+		direction = nil
+		UserInputService.MouseIcon = previousIcon
+	end
+
+	local function stopResizing()
+		if not resizing then
+			return
+		end
+		resizing = false
+		direction = nil
+		UserInputService.MouseIcon = previousIcon
+	end
+
+	if not Packages.IsPlugin then
+		Vide.cleanup(RunService.RenderStepped:Connect(function()
+			if not isVisible() then
+				stopResizing()
+				clearDirection()
 				return
 			end
 
-			if IconResizing == false then
-				PreviousIcon = UserInputService.MouseIcon
-			end
-			IconResizing = Direction
-			UserInputService.MouseIcon = DirectionIcons[Direction]
-		end
-		function self.RemoveIcon()
-			if IsResizing or not IconResizing then
-				return
-			end
-
-			IconResizing = false
-			UserInputService.MouseIcon = PreviousIcon
-		end
-
-		local EdgeSize = 8
-		function self.SetSizeTarget(Rbx)
-			ResizeTarget = Rbx
-			if not Rbx then
-				return
-			end
-
-			for _, Connection in self.Connections do
-				Connection:Disconnect()
-			end
-			table.clear(self.Connections)
-
-			table.insert(self.Connections, RunService.RenderStepped:Connect(function()
-				if not IsResizeTargetVisible() then
-					if IsResizing then
-						self.StopResizing()
-					else
-						self.RemoveIcon()
-					end
-					return
+			local mouse = UserInputService:GetMouseLocation()
+			if resizing then
+				local delta = mouse - startMousePosition
+				if direction == "SizeNS" then
+					delta *= Vector2.new(0, 1)
+				elseif direction == "SizeWE" then
+					delta *= Vector2.new(1, 0)
 				end
-
-				local GUI_INSET = GuiService:GetGuiInset()
-
-				local Mouse = UserInputService:GetMouseLocation()
-				local Position = Rbx.AbsolutePosition + GUI_INSET
-				local Size = Rbx.AbsoluteSize
-
-				local BottomPosition = Position.Y + Size.Y + EdgeSize
-				local RightmostPosition = Position.X + Size.X
-				local MouseOutside = Mouse.X < Position.X - EdgeSize or Mouse.X > RightmostPosition or Mouse.Y < Position.Y or Mouse.Y > BottomPosition
-				if MouseOutside then
-					self.RemoveIcon()
-					return
-				end
-
-				-- check if the mouse is at the edges of the frame
-				local BottomEdge = Mouse.Y > BottomPosition - EdgeSize and Mouse.Y < BottomPosition + EdgeSize
-				local LeftEdge = Mouse.X < Position.X + EdgeSize and Mouse.X > Position.X - EdgeSize
-
-				if BottomEdge or LeftEdge then
-					local Direction = if BottomEdge then if LeftEdge then "SizeAll" else "SizeNS" else "SizeWE"
-					self.AddIcon(Direction)
-				else
-					self.RemoveIcon()
-				end
-			end))
-
-			table.insert(self.Connections, UserInputService.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 and IconResizing and IsResizeTargetVisible() then
-					self.StartResizing()
-				end
-			end))
-			table.insert(self.Connections, UserInputService.InputEnded:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-					self.StopResizing()
-				end
-			end))
-		end
-
-		function self.StartResizing()
-			if IsResizing then
-				return
-			end
-
-			IsResizing = true
-
-			local StartPosition = self.Size:getValue()
-			local Mouse = UserInputService:GetMouseLocation()
-			local StartMousePosition = Vector2.new(Mouse.X, Mouse.Y)
-
-			UpdateConnection = RunService.RenderStepped:Connect(function()
-				local Delta = UserInputService:GetMouseLocation() - StartMousePosition
-				if IconResizing == "SizeNS" then
-					Delta *= Vector2.new(0, 1)
-				elseif IconResizing == "SizeWE" then
-					Delta *= Vector2.new(1, 0)
-				end
-
-				local NewSize = UDim2.fromOffset(
-					math.max(StartPosition.X.Offset - Delta.X, 300),
-					math.max(StartPosition.Y.Offset + Delta.Y, 100)
+				size(
+					UDim2.fromOffset(
+						math.max(startSize.X.Offset - delta.X, 300),
+						math.max(startSize.Y.Offset + delta.Y, 100)
+					)
 				)
-				self.SetSize(NewSize)
-			end)
-		end
-
-		function self.StopResizing()
-			if not IsResizing then
 				return
 			end
 
-			IsResizing = false
-			self.RemoveIcon()
+			local position = target.AbsolutePosition + GuiService:GetGuiInset()
+			local targetSize = target.AbsoluteSize
+			local bottom = position.Y + targetSize.Y + EDGE_SIZE
+			local right = position.X + targetSize.X
+			if mouse.X < position.X - EDGE_SIZE or mouse.X > right or mouse.Y < position.Y or mouse.Y > bottom then
+				clearDirection()
+				return
+			end
 
-			UpdateConnection:Disconnect()
-			UpdateConnection = nil
-		end
+			local bottomEdge = mouse.Y > bottom - EDGE_SIZE and mouse.Y < bottom + EDGE_SIZE
+			local leftEdge = mouse.X < position.X + EDGE_SIZE and mouse.X > position.X - EDGE_SIZE
+			if bottomEdge or leftEdge then
+				setDirection(if bottomEdge then if leftEdge then "SizeAll" else "SizeNS" else "SizeWE")
+			else
+				clearDirection()
+			end
+		end))
+
+		Vide.cleanup(UserInputService.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 and direction and isVisible() then
+				resizing = true
+				startSize = size()
+				startMousePosition = UserInputService:GetMouseLocation()
+			end
+		end))
+		Vide.cleanup(UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				stopResizing()
+			end
+		end))
+		Vide.cleanup(function()
+			UserInputService.MouseIcon = previousIcon
+		end)
 	end
+
+	return {
+		Size = size,
+		SetTarget = function(instance)
+			target = instance
+		end,
+	}
 end
 
-function ChartResize:render()
-	local PacketChart = Roact.oneChild(self.props[Roact.Children])
-	return PacketChart({
-		UISize = self.Size,
-		StartResizing = self.StartResizing,
-		StopResizing = self.StopResizing,
-		AddIcon = self.AddIcon,
-		RemoveIcon = self.RemoveIcon,
-		SetSizeTarget = self.SetSizeTarget,
-	})
-end
-
-function ChartResize:willUnmount()
-	if self.StopResizing then
-		self.StopResizing()
-	end
-
-	if self.Connections then
-		for _, Connection in self.Connections do
-			Connection:Disconnect()
-		end
-
-		table.clear(self.Connections)
-	end
-end
-
-local function ChartResizeInit(PacketChart)
-	return Roact.createElement(ChartResize, {}, {
-		PacketChart = PacketChart,
-	})
-end
-
-return ChartResizeInit
+return ChartResize

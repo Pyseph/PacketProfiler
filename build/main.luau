@@ -1,19 +1,27 @@
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-if RunService:IsStudio() then
-	return nil
-end
-
-local LocalPlayer = Players.LocalPlayer
-
 local Components = script.Components
 local Modules = script.Modules
-local Packages = require(Modules.Packages)
 
-local Roact = require(Packages.Directory.Roact)
 local MainPlugin = require(Components.MainPlugin)
+local Profiler = require(Modules.Profiler)
+local RemoteLayer = require(Modules.RemoteLayer)
+local StudioBridgeClient = require(Modules.StudioBridgeClient)
 
-local Main = Roact.createElement(MainPlugin)
+local studioBridge = StudioBridgeClient.new()
+if studioBridge then
+	return studioBridge
+end
 
-Roact.mount(Main, LocalPlayer.PlayerGui, "PacketProfiler")
-return nil
+local profiler = Profiler.new()
+profiler:RegisterLayer(RemoteLayer)
+profiler:Start()
+
+local unmount = MainPlugin({
+	Profiler = profiler,
+})
+
+profiler.Unmount = function()
+	unmount()
+	profiler:Destroy()
+end
+
+return profiler

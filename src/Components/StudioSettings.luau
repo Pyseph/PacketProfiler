@@ -15,9 +15,9 @@ if Packages.IsPlugin then
 						return StudioSettings.Theme:GetColor(EnumItem)
 					end
 				end
-				error(tostring(ItemName) .. "is not a valid member of \"Enum.StudioStyleGuideColor\"")
+				error(tostring(ItemName) .. 'is not a valid member of "Enum.StudioStyleGuideColor"')
 				--return StudioSettings:GetColor((Enum.StudioStyleGuideColor)[ColorEnumName])
-			end
+			end,
 		},
 		ThemeChanged = StudioSettings.ThemeChanged,
 	}

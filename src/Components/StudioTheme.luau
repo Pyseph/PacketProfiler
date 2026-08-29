@@ -1,37 +1,20 @@
 local PacketProfiler = script.Parent.Parent
-local Components = PacketProfiler.Components
-local Modules = PacketProfiler.Modules
-local Packages = require(Modules.Packages)
+local Packages = require(PacketProfiler.Modules.Packages)
+local Vide = require(Packages.Directory.Vide)
 
-local Roact = require(Packages.Directory.Roact)
-local StudioSettings = require(Components.StudioSettings)
+local StudioSettings = require(PacketProfiler.Components.StudioSettings)
 
-local StudioThemeProvider = Roact.Component:extend("StudioThemeProvider")
+local function StudioTheme()
+	local revision = Vide.source(0)
 
-function StudioThemeProvider:init()
-	self:setState({
-		CurrentTheme = StudioSettings.Theme
-	})
-	self.StudioThemeChanged = StudioSettings.ThemeChanged:Connect(function()
-		self:setState({
-			CurrentTheme = StudioSettings.Theme
-		})
-	end)
-end
+	Vide.cleanup(StudioSettings.ThemeChanged:Connect(function()
+		revision(revision() + 1)
+	end))
 
-function StudioThemeProvider:render()
-	local Component = Roact.oneChild(self.props[Roact.Children])
-	return Component(self.state.CurrentTheme)
-end
-
-function StudioThemeProvider:willUnmount()
-	self.StudioThemeChanged:Disconnect()
-end
-
-local function StudioTheme(Component)
-	return Roact.createElement(StudioThemeProvider, {}, {
-		Component = Component,
-	})
+	return function(name)
+		revision()
+		return StudioSettings.Theme:GetColor(name)
+	end
 end
 
 return StudioTheme

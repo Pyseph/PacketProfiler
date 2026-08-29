@@ -1,12 +1,12 @@
 [package]
 name = "pyseph/packetprofiler"
-version = "2.4.0"
+version = "3.0.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 description = "Remote packet profiler"
 license = "MIT"
 
 [dependencies]
-Roact = "pysephwasntavailable/roact-constant-fork@1.5.0"
+Vide = "centau/vide@0.4.1"
 PacketSizeCounter = "pysephwasntavailable/remotepacketsizecounter@2.4.1"
 Signal = "stravant/goodsignal@0.2.1"

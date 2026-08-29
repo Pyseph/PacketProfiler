@@ -1,218 +1,209 @@
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
 
 local PacketProfiler = script.Parent.Parent
-local Modules = PacketProfiler.Modules
-local Packages = require(Modules.Packages)
+local Packages = require(PacketProfiler.Modules.Packages)
+local Vide = require(Packages.Directory.Vide)
 
-local Roact = require(Packages.Directory.Roact)
-
-local PacketCircleArcs = Roact.Component:extend("PacketCircleArcs")
+local action = Vide.action
+local cleanup = Vide.cleanup
+local create = Vide.create
+local derive = Vide.derive
+local effect = Vide.effect
+local indexes = Vide.indexes
+local read = Vide.read
+local source = Vide.source
 
 local function lerp(a, b, alpha)
-	return a + (b - a)*alpha
+	return a + (b - a) * alpha
 end
 
 local function CircleArc(props)
-	local EndPercent = props.Data.EndPercent
-	local StartPercent = props.Data.StartPercent
-	local VisiblePercent = props.Data.VisiblePercent
-
-	return Roact.createElement("ImageLabel", {
+	return create("ImageLabel")({
 		BackgroundTransparency = 1,
 		Image = "rbxassetid://3587367081",
-		ImageColor3 = props.Highlighted:map(function(Percent)
-			if Percent >= StartPercent and Percent < EndPercent then
-				return props.Data.Color:Lerp(Color3.new(1, 1, 1), 0.5)
+		ImageColor3 = function()
+			local segment = props.Segment()
+			local percent = props.Highlighted()
+			if percent >= segment.StartPercent and percent < segment.EndPercent then
+				return segment.Color:Lerp(Color3.new(1, 1, 1), 0.5)
 			end
-
-			return props.Data.Color
-		end),
+			return segment.Color
+		end,
+		Position = function()
+			return UDim2.fromScale(if props.Segment().Side == "Left" then 0 else -1, 0)
+		end,
 		Size = UDim2.fromScale(2, 1),
-		Position = UDim2.fromScale(props.Side == "Left" and 0 or -1, 0),
-		ZIndex = props.ZIndex,
-	}, {
-		UIGradient = Roact.createElement("UIGradient", {
-			Rotation = props.AnimationAlpha:map(function(Alpha)
-				if props.Side == "Left" then
-					local AlphaPercent = lerp(0, VisiblePercent, math.clamp(Alpha*2, 0, 1))
-					local Angle = -3.6*AlphaPercent + 180
-					return Angle
-				else
-					local AlphaPercent = lerp(0, VisiblePercent - 50, math.clamp(Alpha*2 - 1, 0, 1))
-					return lerp(0, -180, AlphaPercent / 100) * 2
+		ZIndex = function()
+			return props.Segment().ZIndex
+		end,
+
+		create("UIGradient")({
+			Rotation = function()
+				local segment = props.Segment()
+				local alpha = props.AnimationAlpha()
+				if segment.Side == "Left" then
+					local visible = lerp(0, segment.VisiblePercent, math.clamp(alpha * 2, 0, 1))
+					return -3.6 * visible + 180
 				end
-			end),
-			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0),
-				NumberSequenceKeypoint.new(props.Side == "Left" and 0.498 or 0.5, 0),
-				NumberSequenceKeypoint.new(props.Side == "Left" and 0.499 or 0.501, 1),
-				NumberSequenceKeypoint.new(1, 1),
-			}),
+				local visible = lerp(0, segment.VisiblePercent - 50, math.clamp(alpha * 2 - 1, 0, 1))
+				return lerp(0, -180, visible / 100) * 2
+			end,
+			Transparency = function()
+				local side = props.Segment().Side
+				return NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(if side == "Left" then 0.498 else 0.5, 0),
+					NumberSequenceKeypoint.new(if side == "Left" then 0.499 else 0.501, 1),
+					NumberSequenceKeypoint.new(1, 1),
+				})
+			end,
 		}),
 	})
 end
 
-function PacketCircleArcs:init()
-	self.AnimationAlpha, self.SetAnimationAlpha = Roact.createBinding(0)
-	self.ActualAlpha, self.SetActualAlpha = Roact.createBinding(0)
-	self.MousePosition, self.SetMousePosition = Roact.createBinding(Vector2.zero)
-	self.HighlightedPercent, self.SetHighlightedPercent = Roact.createBinding(-1)
-
-	self.DebugMousePos, self.SetDebugMousePos = Roact.createBinding(UDim2.fromOffset(0, 0))
-	self.ShowDebug, self.SetShowDebug = Roact.createBinding(false)
-
-	local Speed = 2
-	local Mouse = Packages.IsPlugin and self.props.PluginMouse or Players.LocalPlayer:GetMouse()
-	RunService.RenderStepped:Connect(function(Step)
-		local MousePosition = Vector2.new(Mouse.X, Mouse.Y)
-		self.SetMousePosition(MousePosition)
-
-		local alpha = self.ActualAlpha:getValue()
-
-		self.SetAnimationAlpha(TweenService:GetValue(alpha, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-		self.SetActualAlpha(math.clamp(alpha + Step*Speed, 0, 1))
+local function PacketCircleArcs(props)
+	local circle
+	local actualAlpha = source(0)
+	local highlighted = source(-1)
+	local mouseOver = false
+	local animationAlpha = derive(function()
+		return TweenService:GetValue(actualAlpha(), Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
-end
+	local segments = derive(function()
+		local left = {}
+		local right = {}
+		local ranges = {}
+		local startPercent = 0
+		local arcs = read(props.Arcs)
 
-function PacketCircleArcs:render()
-	local CircleArcs = {
-		Left = {},
-		Right = {},
-	}
-	local StartPercent = 0
+		for index, arc in arcs do
+			if startPercent > 100 then
+				break
+			end
+			local endPercent = math.min(startPercent + arc.Percent, 100)
+			local zIndex = #arcs - index + 2
+			ranges[index] = {
+				StartPercent = startPercent,
+				EndPercent = endPercent,
+				Name = arc.Name,
+			}
 
-	self.SetActualAlpha(0)
-
-	local ArcData = {}
-	local NumArcs = #self.props.Arcs
-	for Index, Arc in self.props.Arcs do
-		local ZIndex = (NumArcs - Index) + 2
-		local EndPercent = math.min(StartPercent + Arc.Percent, 100)
-
-		if StartPercent > 100 then
-			break
-		end
-
-		ArcData[Index] = {
-			StartPercent = StartPercent,
-			EndPercent = EndPercent,
-			Color = Arc.Color,
-			Name = Arc.Name,
-		}
-
-		if EndPercent > 50 and StartPercent <= 50 then
-			CircleArcs.Left[Index] = CircleArc({
-				ZIndex = ZIndex,
-				Data = {
-					StartPercent = StartPercent,
-					EndPercent = EndPercent,
+			if endPercent > 50 and startPercent <= 50 then
+				table.insert(left, {
+					Color = arc.Color,
+					EndPercent = endPercent,
+					Side = "Left",
+					StartPercent = startPercent,
 					VisiblePercent = 50,
-					Color = Arc.Color,
-				},
-				Side = "Left",
-				AnimationAlpha = self.AnimationAlpha,
-				Highlighted = self.HighlightedPercent,
+					ZIndex = zIndex,
+				})
+			end
+
+			local side = if endPercent > 50 then "Right" else "Left"
+			table.insert(if side == "Left" then left else right, {
+				Color = arc.Color,
+				EndPercent = endPercent,
+				Side = side,
+				StartPercent = startPercent,
+				VisiblePercent = endPercent,
+				ZIndex = zIndex,
 			})
+			startPercent += arc.Percent
 		end
 
-		local ArcSide = EndPercent > 50 and "Right" or "Left"
-		CircleArcs[ArcSide][Index] = CircleArc({
-			ZIndex = ZIndex,
-			Data = {
-				StartPercent = StartPercent,
-				EndPercent = EndPercent,
-				VisiblePercent = EndPercent,
-				Color = Arc.Color,
-			},
-			Side = ArcSide,
-			AnimationAlpha = self.AnimationAlpha,
-			Highlighted = self.HighlightedPercent,
-		})
+		return { Left = left, Right = right, Ranges = ranges }
+	end)
 
-		StartPercent += Arc.Percent
-	end
+	effect(function()
+		read(props.Arcs)
+		actualAlpha(0)
+	end)
+	cleanup(RunService.RenderStepped:Connect(function(deltaTime)
+		local alpha = actualAlpha()
+		if alpha < 1 then
+			actualAlpha(math.min(alpha + deltaTime * 2, 1))
+		end
+	end))
 
-	return Roact.createElement("Frame", {
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -8, 1, -8),
-		Position = UDim2.fromScale(0.5, 0.5),
+	return create("Frame")({
 		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, -8, 1, -8),
 
-		[Roact.Event.MouseEnter] = function(Rbx, X, Y)
-			self.MouseOver = true
-			self.SetShowDebug(true)
+		MouseEnter = function()
+			mouseOver = true
 		end,
-		[Roact.Event.MouseLeave] = function()
-			self.MouseOver = false
-			self.SetHighlightedPercent(-1)
-			self.SetShowDebug(false)
+		MouseLeave = function()
+			mouseOver = false
+			highlighted(-1)
 		end,
-		[Roact.Event.MouseMoved] = function(Rbx, X, Y)
-			if self.MouseOver then
-				local MousePosition = Vector2.new(X, Y)
-				local Center = Rbx.AbsolutePosition + Rbx.AbsoluteSize/2
-
-				self.SetDebugMousePos(UDim2.fromOffset(X - 1, Y - 1))
-
-				local Angle = math.deg(math.atan2(MousePosition.Y - Center.Y, -(MousePosition.X - Center.X))) + 90
-				if Angle < 0 then
-					Angle += 360
-				end
-
-				local Percent = (Angle / 360) * 100
-				self.SetHighlightedPercent(Percent)
-			end
-		end,
-		[Roact.Event.InputEnded] = function(_, inputObject)
-			if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		MouseMoved = function(x, y)
+			if not mouseOver or circle == nil then
 				return
 			end
-			
-			local Percent = self.HighlightedPercent:getValue()
-			if Percent == -1 then
+			local center = circle.AbsolutePosition + circle.AbsoluteSize / 2
+			local angle = math.deg(math.atan2(y - center.Y, -(x - center.X))) + 90
+			if angle < 0 then
+				angle += 360
+			end
+			highlighted(angle / 360 * 100)
+		end,
+		InputEnded = function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 				return
 			end
-
-			for Index, Arc in ArcData do
-				if Percent >= Arc.StartPercent and Percent < Arc.EndPercent then
-					if self.props.OnArcClicked then
-						self.props.OnArcClicked(Arc.Name)
+			local percent = highlighted()
+			if percent < 0 then
+				return
+			end
+			for _, range in segments().Ranges do
+				if percent >= range.StartPercent and percent < range.EndPercent then
+					if props.OnArcClicked then
+						props.OnArcClicked(range.Name)
 					end
 					break
 				end
 			end
-
-			self.SetHighlightedPercent(-1)
+			highlighted(-1)
 		end,
-	}, {
-		Left = Roact.createElement("Frame", {
+		action(function(instance)
+			circle = instance
+		end),
+
+		create("Frame")({
 			BackgroundTransparency = 1,
 			ClipsDescendants = true,
 			Size = UDim2.fromScale(0.5, 1),
-		}, {
-			Arcs = Roact.createFragment(CircleArcs.Left),
+
+			indexes(function()
+				return segments().Left
+			end, function(segment)
+				return CircleArc({
+					AnimationAlpha = animationAlpha,
+					Highlighted = highlighted,
+					Segment = segment,
+				})
+			end),
 		}),
-		Right = Roact.createElement("Frame", {
+		create("Frame")({
 			AnchorPoint = Vector2.new(1, 0),
 			BackgroundTransparency = 1,
 			ClipsDescendants = true,
 			Position = UDim2.fromScale(1, 0),
 			Size = UDim2.fromScale(0.5, 1),
-		}, {
-			Arcs = Roact.createFragment(CircleArcs.Right),
+
+			indexes(function()
+				return segments().Right
+			end, function(segment)
+				return CircleArc({
+					AnimationAlpha = animationAlpha,
+					Highlighted = highlighted,
+					Segment = segment,
+				})
+			end),
 		}),
-		--[[
-		DebugFrame = Roact.createElement("Frame", {
-			BackgroundColor3 = Color3.new(1, 0, 0),
-			BorderSizePixel = 0,
-			Size = UDim2.fromOffset(4, 4),
-			Position = self.DebugMousePos,
-			Visible = self.ShowDebug,
-			ZIndex = 1000,
-		})
-		]]
 	})
 end
 

@@ -1,54 +1,33 @@
-local Plugin = script:FindFirstAncestorOfClass("Plugin")
-local Script = Plugin:FindFirstChildOfClass("Script")
-local Modules = Script.Modules
-local Packages = require(Modules.Packages)
+local PacketProfiler = script.Parent.Parent
+local Packages = require(PacketProfiler.Modules.Packages)
+local Vide = require(Packages.Directory.Vide)
 
-local Roact = require(Packages.Directory.Roact)
-
-local StudioWidget = Roact.Component:extend("StudioWidget")
-
-function StudioWidget:init()
-	local WidgetInfo = DockWidgetPluginGuiInfo.new(
-		self.props.InitialDockState,
-		self.props.Enabled,
+local function StudioWidget(props)
+	local info = DockWidgetPluginGuiInfo.new(
+		props.InitialDockState,
+		props.Enabled(),
 		false,
-		self.props.DefaultSize.X,
-		self.props.DefaultSize.Y,
-		self.props.MinimumSize.X,
-		self.props.MinimumSize.Y
+		props.DefaultSize.X,
+		props.DefaultSize.Y,
+		props.MinimumSize.X,
+		props.MinimumSize.Y
 	)
+	local widget = props.Plugin:CreateDockWidgetPluginGui(props.WidgetId, info)
+	widget.Title = props.WidgetTitle
+	widget.Name = props.WidgetId
+	widget.ZIndexBehavior = props.ZIndexBehavior or Enum.ZIndexBehavior.Global
 
-	local Widget = Plugin:CreateDockWidgetPluginGui(self.props.WidgetId, WidgetInfo)
-	Widget.Title = self.props.WidgetTitle
-	Widget.Name = self.props.WidgetId
-	Widget.ZIndexBehavior = self.props.ZIndexBehavior or Enum.ZIndexBehavior.Global
-
-	self.Widget = Widget
-end
-
-function StudioWidget:didMount()
-	self.OnEnabled = self.props.OnEnabled:Connect(function(Enabled)
-		self.Widget.Enabled = Enabled
+	Vide.cleanup(widget)
+	Vide.cleanup(widget:GetPropertyChangedSignal("Enabled"):Connect(function()
+		if not widget.Enabled and props.Enabled() then
+			props.OnEnabled(false)
+		end
+	end))
+	Vide.effect(function()
+		widget.Enabled = props.Enabled()
 	end)
-	self.Widget:BindToClose(function()
-		self.Widget.Enabled = false
-	end)
-end
 
-function StudioWidget:render()
-	return Roact.createElement(Roact.Portal, {
-		target = self.Widget
-	}, self.props[Roact.Children])
-end
-
-function StudioWidget:didUpdate(lastProps)
-	if self.props.Enabled ~= lastProps.Enabled then
-		self.Widget.Enabled = self.props.Enabled
-	end
-end
-
-function StudioWidget:willUnmount()
-	self.OnEnabled:Disconnect()
+	return widget
 end
 
 return StudioWidget

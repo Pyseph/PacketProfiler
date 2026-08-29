@@ -1,273 +1,232 @@
-local TweenService = game:GetService("TweenService")
-
 local PacketProfiler = script.Parent.Parent
-local Components = PacketProfiler.Components
-local Modules = PacketProfiler.Modules
-local Packages = require(Modules.Packages)
+local Packages = require(PacketProfiler.Modules.Packages)
+local Vide = require(Packages.Directory.Vide)
 
-local Roact = require(Packages.Directory.Roact)
+local action = Vide.action
+local create = Vide.create
+local effect = Vide.effect
+local indexes = Vide.indexes
+local read = Vide.read
+local source = Vide.source
+local spring = Vide.spring
 
-local StudioTheme = require(Components.StudioTheme)
-
-local function GetSizeUnit(Value: number): (number, string)
-	if Value < 1000 then
-		return Value, "bytes"
-	elseif Value < 1000 * 1000 then
-		return Value / 1000, "kilobytes"
-	else
-		return Value / (1000 * 1000), "megabytes"
+local function getSizeUnit(value, unit)
+	if unit ~= "bytes" then
+		return value, unit
+	elseif value < 1_000 then
+		return value, "bytes"
+	elseif value < 1_000_000 then
+		return value / 1_000, "kilobytes"
 	end
+	return value / 1_000_000, "megabytes"
 end
 
-local DataChartItem = Roact.Component:extend("DataChartItem")
+local function DataChartItem(props)
+	local expanded = source(false)
+	local containerSize = source(Vector2.zero)
+	local highlightTransparency = spring(function()
+		local selected = props.SelectedArc and props.SelectedArc() == props.Arc().Name
+		return if selected then 0.72 else 1
+	end, 0.16, 1)
 
-function DataChartItem:init()
-	self.RemoteData, self.ShowRemoteData = Roact.createBinding(false)
-	self.Size, self.SetSize = Roact.createBinding(Vector2.zero)
-	self.HighlightTransparency, self.SetHighlightTransparency = Roact.createBinding(1)
-
-	self.HighlightFrame = Roact.createRef()
-	self.FadeInTween = nil
-	self.FadeOutTween = nil
-	self.HighlightTask = nil
-end
-
-function DataChartItem:didMount()
-	if self.props.OnArcClicked then
-		self.ArcClickConnection = self.props.OnArcClicked:Connect(function(arcName)
-			if arcName == self.props.Arc.Name then
-				self.ShowRemoteData(true)
-
-				if self.FadeInTween then
-					self.FadeInTween:Cancel()
-				end
-				if self.FadeOutTween then
-					self.FadeOutTween:Cancel()
-				end
-				if self.HighlightTask then
-					task.cancel(self.HighlightTask)
-				end
-				
-				local highlightFrame = self.HighlightFrame:getValue()
-				if highlightFrame then
-					highlightFrame.BackgroundTransparency = 1
-
-					self.FadeInTween = TweenService:Create(
-						highlightFrame,
-						TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-						{BackgroundTransparency = 0.7}
-					)
-					self.FadeInTween:Play()
-
-					self.HighlightTask = task.delay(0.05 + 0.2, function()
-						self.FadeOutTween = TweenService:Create(
-							highlightFrame,
-							TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-							{BackgroundTransparency = 1}
-						)
-						self.FadeOutTween:Play()
-					end)
-				end
+	if props.SelectedArc then
+		effect(function()
+			local selected = props.SelectedArc()
+			if selected ~= nil and selected == props.Arc().Name then
+				expanded(true)
 			end
 		end)
 	end
-end
 
-function DataChartItem:willUnmount()
-	if self.ArcClickConnection then
-		self.ArcClickConnection:Disconnect()
-	end
-	if self.FadeInTween then
-		self.FadeInTween:Cancel()
-	end
-	if self.FadeOutTween then
-		self.FadeOutTween:Cancel()
-	end
-	if self.HighlightTask then
-		task.cancel(self.HighlightTask)
-	end
-end
+	return create("Frame")({
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 22),
 
-function DataChartItem:render()
-	local Arc = self.props.Arc
-	local RemoteCalls = {}
-	for Index, RemoteData in self.props.RemoteData do
-		local PacketDisplayText = RemoteData.Packet
-
-		RemoteCalls[Index] = StudioTheme(function(Theme)
-			local TitleIndex = Index * 2
-			local ContainerIndex = Index * 2 + 1
-
-			local Title = Roact.createElement("TextButton", {
-				AutoLocalize = false,
-				LayoutOrder = TitleIndex,
-				Font = Enum.Font.SourceSans,
-				Text = RemoteData.Name,
-				RichText = true,
-				TextColor3 = Theme:GetColor("BrightText"),
-				TextSize = 14,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 20),
-				Visible = self.RemoteData,
-				Selectable = false,
-			}, {
-				Padding = Roact.createElement("UIPadding", {
-					PaddingBottom = UDim.new(0, 4),
-				}),
-			})
-			local CodeContainer = Roact.createElement("ScrollingFrame", {
-				AutomaticSize = Enum.AutomaticSize.Y,
-				AutomaticCanvasSize = Enum.AutomaticSize.X,
-				LayoutOrder = ContainerIndex,
-				BackgroundColor3 = Theme:GetColor("ScrollBarBackground"),
-				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.new(1, -12, 0, 0),
-				ClipsDescendants = true,
-				BorderSizePixel = 0,
-				ScrollBarImageColor3 = Theme:GetColor("ScrollBar"),
-				ScrollBarThickness = 4,
-				ScrollingDirection = Enum.ScrollingDirection.X,
-				Visible = self.RemoteData,
-				[Roact.Ref] = function(ScrollingFrame)
-					if ScrollingFrame ~= nil then
-						-- This is a workaround for the fact that the UICorners don't work properly on ScrollingFrames.
-						-- If you try creating a UICorner normally, it refuses to render. Using task.defer also doesn't work.
-						-- ¯\_(ツ)_/¯
-						task.delay(0.1, function()
-							local UICorner = Instance.new("UICorner")
-							UICorner.CornerRadius = UDim.new(0, 4)
-							UICorner.Parent = ScrollingFrame
-						end)
-					end
-				end,
-			}, {
-				UIStroke = Roact.createElement("UIStroke", {
-					Color = Theme:GetColor("DropShadow"),
-					LineJoinMode = Enum.LineJoinMode.Round,
-					Transparency = 0.5,
-				}),
-				Text = Roact.createElement("TextLabel", {
-					AutoLocalize = false,
-					Font = Enum.Font.Code,
-					RichText = true,
-					Text = PacketDisplayText,
-					TextColor3 = Theme:GetColor("BrightText"),
-					TextSize = 12,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextYAlignment = Enum.TextYAlignment.Top,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					BackgroundTransparency = 1,
-					Size = UDim2.fromScale(1, 1),
-					ClipsDescendants = true,
-				}, {
-					Padding = Roact.createElement("UIPadding", {
-						PaddingBottom = UDim.new(0, 8),
-						PaddingRight = UDim.new(0, 8),
-						PaddingLeft = UDim.new(0, 4),
-						PaddingTop = UDim.new(0, 4),
-					}),
-				}),
-			})
-
-			return Roact.createFragment({Title, CodeContainer})
-		end)
-	end
-
-	return StudioTheme(function(Theme)
-		return Roact.createElement("Frame", {
+		create("Frame")({
+			BackgroundColor3 = function()
+				return props.Arc().Color
+			end,
+			BackgroundTransparency = highlightTransparency,
+			BorderSizePixel = 0,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 1,
+		}),
+		create("TextButton")({
+			AutoButtonColor = false,
+			AutoLocalize = false,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 22),
+			Font = Enum.Font.SourceSans,
+			Position = UDim2.fromOffset(18, 0),
+			RichText = true,
+			Size = UDim2.new(1, -18, 0, 20),
+			Text = function()
+				local arc = props.Arc()
+				local value, unit = getSizeUnit(arc.DataSize, read(props.Unit))
+				return string.format(
+					'<font color="#%s"><b>%s</b></font>: %.1f%%, %g %s',
+					arc.Color:ToHex(),
+					arc.Name,
+					arc.Percent,
+					value,
+					unit
+				)
+			end,
+			TextColor3 = function()
+				return props.Theme("BrightText")
+			end,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 3,
+
+			Activated = function()
+				expanded(not expanded())
+			end,
+
+			create("UIPadding")({ PaddingBottom = UDim.new(0, 4) }),
+		}),
+		create("ImageLabel")({
+			BackgroundTransparency = 1,
+			Image = function()
+				return if expanded() then "rbxassetid://18699144520" else "rbxassetid://18699113012"
+			end,
+			ImageColor3 = function()
+				return props.Theme("BrightText")
+			end,
+			Position = UDim2.fromOffset(0, 2),
+			Size = UDim2.fromOffset(16, 16),
+			ZIndex = 3,
+		}),
+		create("Frame")({
 			AutomaticSize = Enum.AutomaticSize.Y,
-		}, {
-			HighlightEffect = Roact.createElement("Frame", {
-				BackgroundColor3 = Arc.Color,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(1, 1),
-				Position = UDim2.fromScale(0, 0),
-				ZIndex = 1,
-				BorderSizePixel = 0,
-				[Roact.Ref] = self.HighlightFrame,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(8, 24),
+			Size = function()
+				return UDim2.new(1, read(props.ScrollBarVisible) and -12 or 0, 0, 0)
+			end,
+
+			action(function(instance)
+				containerSize(instance.AbsoluteSize)
+				Vide.cleanup(instance:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+					containerSize(instance.AbsoluteSize)
+				end))
+			end),
+			create("UIListLayout")({
+				FillDirection = Enum.FillDirection.Vertical,
+				HorizontalAlignment = Enum.HorizontalAlignment.Left,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
 			}),
-			["Information"] = Roact.createElement("TextButton", {
-				AutoLocalize = false,
-				Font = Enum.Font.SourceSans,
-				Text = string.format("<font color=\"#%s\"><b>%s</b></font>: %.1f%%, %d %s", Arc.Color:ToHex(), Arc.Name, Arc.Percent, GetSizeUnit(Arc.DataSize)),
-				RichText = true,
-				TextColor3 = Theme:GetColor("BrightText"),
-				TextSize = 14,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, -18, 0, 20),
-				Position = UDim2.fromOffset(18, 0),
-				ZIndex = 3,
-				[Roact.Event.Activated] = function()
-					self.ShowRemoteData(not self.RemoteData:getValue())
-				end,
-			}, {
-				Padding = Roact.createElement("UIPadding", {
-					PaddingBottom = UDim.new(0, 4),
-				}),
-			}),
-			Chevron = Roact.createElement("ImageLabel", {
-				BackgroundTransparency = 1,
-				Image = self.RemoteData:map(function(RemoteData)
-					return RemoteData and "rbxassetid://18699144520" or "rbxassetid://18699113012"
-				end),
-				ImageColor3 = Theme:GetColor("BrightText"),
-				Size = UDim2.fromOffset(16, 16),
-				Position = UDim2.fromOffset(0, 2),
-				ZIndex = 3,
-			}),
-			Container = Roact.createElement("Frame", {
-				AutomaticSize = Enum.AutomaticSize.Y,
-				Size = self.props.ScrollBarChanged:map(function(Data)
-					return UDim2.new(1, Data.Visible and -12 or 0, 0, 0)
-				end),
-				Position = UDim2.fromOffset(8, 24),
-				Transparency = 1,
-				[Roact.Change.AbsoluteSize] = function(Rbx)
-					self.SetSize(Rbx.AbsoluteSize)
-				end,
-			}, {
-				RemoteData = Roact.createFragment(RemoteCalls),
-				UIListLayout = Roact.createElement("UIListLayout", {
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					FillDirection = Enum.FillDirection.Vertical,
-					HorizontalAlignment = Enum.HorizontalAlignment.Left,
-					VerticalAlignment = Enum.VerticalAlignment.Top,
-					Padding = UDim.new(0, 0),
-				}),
-			}),
-			Divider = Roact.createElement("Frame", {
-				BackgroundColor3 = Theme:GetColor("DropShadow"),
-				Transparency = 0.5,
-				BorderSizePixel = 0,
-				Size = self.Size:map(function(Size)
-					return UDim2.new(0, 1, 0, Size.Y)
-				end),
-				Position = UDim2.fromOffset(0, 26),
-				ZIndex = 2,
-			}),
+			indexes(function()
+				return props.Arc().RemoteData
+			end, function(remoteData, index)
+				return {
+					create("TextButton")({
+						AutoButtonColor = false,
+						AutoLocalize = false,
+						BackgroundTransparency = 1,
+						Font = Enum.Font.SourceSans,
+						LayoutOrder = index * 2,
+						RichText = true,
+						Selectable = false,
+						Size = UDim2.new(1, 0, 0, 20),
+						Text = function()
+							return remoteData().Name
+						end,
+						TextColor3 = function()
+							return props.Theme("BrightText")
+						end,
+						TextSize = 14,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						Visible = expanded,
+
+						create("UIPadding")({ PaddingBottom = UDim.new(0, 4) }),
+					}),
+					create("ScrollingFrame")({
+						AutomaticCanvasSize = Enum.AutomaticSize.X,
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundColor3 = function()
+							return props.Theme("ScrollBarBackground")
+						end,
+						BorderSizePixel = 0,
+						ClipsDescendants = true,
+						LayoutOrder = index * 2 + 1,
+						ScrollBarImageColor3 = function()
+							return props.Theme("ScrollBar")
+						end,
+						ScrollBarThickness = 4,
+						ScrollingDirection = Enum.ScrollingDirection.X,
+						Size = UDim2.new(1, -12, 0, 0),
+						Visible = expanded,
+
+						create("UICorner")({ CornerRadius = UDim.new(0, 4) }),
+						create("UIStroke")({
+							Color = function()
+								return props.Theme("DropShadow")
+							end,
+							LineJoinMode = Enum.LineJoinMode.Round,
+							Transparency = 0.5,
+						}),
+						create("TextLabel")({
+							AutomaticSize = Enum.AutomaticSize.XY,
+							AutoLocalize = false,
+							BackgroundTransparency = 1,
+							ClipsDescendants = true,
+							Font = Enum.Font.Code,
+							RichText = true,
+							Size = UDim2.fromScale(1, 1),
+							Text = function()
+								return remoteData().Packet
+							end,
+							TextColor3 = function()
+								return props.Theme("BrightText")
+							end,
+							TextSize = 12,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextYAlignment = Enum.TextYAlignment.Top,
+
+							create("UIPadding")({
+								PaddingBottom = UDim.new(0, 8),
+								PaddingLeft = UDim.new(0, 4),
+								PaddingRight = UDim.new(0, 8),
+								PaddingTop = UDim.new(0, 4),
+							}),
+						}),
+					}),
+				}
+			end),
+		}),
+		create("Frame")({
+			BackgroundColor3 = function()
+				return props.Theme("DropShadow")
+			end,
+			BackgroundTransparency = 0.5,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(0, 26),
+			Size = function()
+				return UDim2.fromOffset(1, containerSize().Y)
+			end,
+			ZIndex = 2,
+		}),
+	})
+end
+
+local function PacketChartItems(props)
+	local arcs = if type(props.Arcs) == "function"
+		then props.Arcs
+		else function()
+			return props.Arcs
+		end
+
+	return indexes(arcs, function(arc)
+		return DataChartItem({
+			Arc = arc,
+			ScrollBarVisible = props.ScrollBarVisible,
+			SelectedArc = props.SelectedArc,
+			Theme = props.Theme,
+			Unit = props.Unit,
 		})
 	end)
 end
 
-local function DataChartItems(props)
-	local ChartItems = {}
-
-	local PercentOffset = 0
-	for _, Arc in props.Arcs do
-		PercentOffset -= Arc.Percent
-		ChartItems[PercentOffset] = Roact.createElement(DataChartItem, {
-			Arc = Arc,
-			RemoteData = Arc.RemoteData,
-			ScrollBarChanged = props.ScrollBarChanged,
-			OnArcClicked = props.OnArcClicked,
-		})
-	end
-
-	return Roact.createFragment(ChartItems)
-end
-
-return DataChartItems
+return PacketChartItems

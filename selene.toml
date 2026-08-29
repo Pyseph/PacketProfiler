@@ -1,1 +1,4 @@
 std = "roblox"
+
+[rules]
+mixed_table = "allow"

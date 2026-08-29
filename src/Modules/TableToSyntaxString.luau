@@ -7,9 +7,41 @@ local Packages = require(Modules.Packages)
 local PacketSizeCounter = require(Packages.Directory.PacketSizeCounter)
 local StudioSettings = require(Components.StudioSettings)
 
-local SPECIAL_CHARS = {["\a"] = "\\a", ["\b"] = "\\b", ["\f"] = "\\f", ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\v"] = "\\v", ["\0"] = "\\0"}
-local KEYWORDS = { ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true, ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true, ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true, ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true, ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true, ["while"] = true, ["continue"] = true}
-local RICH_TEXT_ESCAPES = {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ["\""] = "&quot;", ["'"] = "&apos;"}
+local SPECIAL_CHARS = {
+	["\a"] = "\\a",
+	["\b"] = "\\b",
+	["\f"] = "\\f",
+	["\n"] = "\\n",
+	["\r"] = "\\r",
+	["\t"] = "\\t",
+	["\v"] = "\\v",
+	["\0"] = "\\0",
+}
+local KEYWORDS = {
+	["and"] = true,
+	["break"] = true,
+	["do"] = true,
+	["else"] = true,
+	["elseif"] = true,
+	["end"] = true,
+	["false"] = true,
+	["for"] = true,
+	["function"] = true,
+	["if"] = true,
+	["in"] = true,
+	["local"] = true,
+	["nil"] = true,
+	["not"] = true,
+	["or"] = true,
+	["repeat"] = true,
+	["return"] = true,
+	["then"] = true,
+	["true"] = true,
+	["until"] = true,
+	["while"] = true,
+	["continue"] = true,
+}
+local RICH_TEXT_ESCAPES = { ["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" }
 
 local VALID_VARIABLE = "^[_%a][_%w]*$"
 local CONTROL_CHARS = "[%c%z]"
@@ -76,8 +108,10 @@ function StringAccumulator:canAddGlyphs(count)
 end
 
 function StringAccumulator:addRaw(str)
-	if self.trimmed then return false end
-	
+	if self.trimmed then
+		return false
+	end
+
 	local renderedLength = #str
 	if not self:canAddGlyphs(renderedLength) then
 		self.trimmed = true
@@ -85,15 +119,17 @@ function StringAccumulator:addRaw(str)
 		self.glyphCount = self.glyphCount + TRIM_MESSAGE_LENGTH
 		return false
 	end
-	
+
 	table.insert(self.parts, str)
 	self.glyphCount = self.glyphCount + renderedLength
 	return true
 end
 
 function StringAccumulator:addFormatted(str, renderedStr)
-	if self.trimmed then return false end
-	
+	if self.trimmed then
+		return false
+	end
+
 	local renderedLength = #renderedStr
 	if not self:canAddGlyphs(renderedLength) then
 		-- Try to add partial content if there's room
@@ -101,18 +137,23 @@ function StringAccumulator:addFormatted(str, renderedStr)
 		if remaining > 0 then
 			local partial = string.sub(renderedStr, 1, remaining)
 			-- For formatted strings, we need to close the font tag
-			table.insert(self.parts, string.format("<font color=\"%s\">%s</font>", 
-				string.match(str, 'color="([^"]+)"') or StyleGuideColors.text, 
-				partial))
+			table.insert(
+				self.parts,
+				string.format(
+					'<font color="%s">%s</font>',
+					string.match(str, 'color="([^"]+)"') or StyleGuideColors.text,
+					partial
+				)
+			)
 			self.glyphCount = self.glyphCount + #partial
 		end
-		
+
 		self.trimmed = true
 		table.insert(self.parts, TRIM_MESSAGE)
 		self.glyphCount = self.glyphCount + TRIM_MESSAGE_LENGTH
 		return false
 	end
-	
+
 	table.insert(self.parts, str)
 	self.glyphCount = self.glyphCount + renderedLength
 	return true
@@ -127,7 +168,8 @@ function StringAccumulator:isTrimmed()
 end
 
 local function Syntax(Value, Type, accumulator)
-	local formatted = string.format("<font color=\"%s\">%s</font>", StyleGuideColors[Type] or StyleGuideColors.text, Value)
+	local formatted =
+		string.format('<font color="%s">%s</font>', StyleGuideColors[Type] or StyleGuideColors.text, Value)
 	if accumulator then
 		accumulator:addFormatted(formatted, Value)
 		return formatted
@@ -136,15 +178,33 @@ local function Syntax(Value, Type, accumulator)
 end
 
 local c = {
-	["."] = function(acc) return Syntax(".", "operator", acc) end,
-	[","] = function(acc) return Syntax(",", "text", acc) end,
-	["="] = function(acc) return Syntax("=", "operator", acc) end,
-	["("] = function(acc) return Syntax("(", "bracket", acc) end,
-	[")"] = function(acc) return Syntax(")", "bracket", acc) end,
-	["{"] = function(acc) return Syntax("{", "bracket", acc) end,
-	["}"] = function(acc) return Syntax("}", "bracket", acc) end,
-	["["] = function(acc) return Syntax("[", "bracket", acc) end,
-	["]"] = function(acc) return Syntax("]", "bracket", acc) end,
+	["."] = function(acc)
+		return Syntax(".", "operator", acc)
+	end,
+	[","] = function(acc)
+		return Syntax(",", "text", acc)
+	end,
+	["="] = function(acc)
+		return Syntax("=", "operator", acc)
+	end,
+	["("] = function(acc)
+		return Syntax("(", "bracket", acc)
+	end,
+	[")"] = function(acc)
+		return Syntax(")", "bracket", acc)
+	end,
+	["{"] = function(acc)
+		return Syntax("{", "bracket", acc)
+	end,
+	["}"] = function(acc)
+		return Syntax("}", "bracket", acc)
+	end,
+	["["] = function(acc)
+		return Syntax("[", "bracket", acc)
+	end,
+	["]"] = function(acc)
+		return Syntax("]", "bracket", acc)
+	end,
 }
 
 local function CleanupString(String)
@@ -163,7 +223,7 @@ local function GetHierarchy(Object, accumulator)
 		NotDone = NextObject and NextObject.Parent and NextObject ~= game
 		local ObjName = CleanupString(Object.Name)
 		local renderedName = ObjName
-		
+
 		if KEYWORDS[ObjName] or not string.match(ObjName, VALID_VARIABLE) then
 			local quotedName = `&quot;{ObjName}&quot;`
 			local formattedQuoted = Syntax(quotedName, "string")
@@ -181,11 +241,11 @@ local function GetHierarchy(Object, accumulator)
 
 	local result = table.concat(parts)
 	local rendered = table.concat(renderedParts)
-	
+
 	if accumulator then
 		accumulator:addFormatted(result, rendered)
 	end
-	
+
 	return result
 end
 
@@ -201,7 +261,7 @@ end
 
 local function SerializeType(Value, Class, accumulator)
 	local result, rendered
-	
+
 	if Class == "string" then
 		local cleaned = CleanupString(Value)
 		rendered = `"{cleaned}"`
@@ -211,28 +271,34 @@ local function SerializeType(Value, Class, accumulator)
 	elseif Class == "buffer" then
 		local bufferData = ReadBuffer(Value)
 		rendered = `buffer.new(${bufferData})`
-		result = `{Syntax("buffer", "builtin")}{c["."](nil)}{Syntax("new", "builtin")}{c["("](nil)}{Syntax(bufferData, "number")}{c[")"](nil)}`
+		result = `{Syntax("buffer", "builtin")}{c["."](nil)}{Syntax("new", "builtin")}{c["("](nil)}{Syntax(
+			bufferData,
+			"number"
+		)}{c[")"](nil)}`
 	elseif type(Value) ~= Class then -- CFrame, Vector3, UDim2, ...
 		local valueStr = tostring(Value)
 		rendered = `{Class}.new({valueStr})`
-		result = `{Syntax(Class, "builtin")}{c["."](nil)}{Syntax("new", "builtin")}{c["("](nil)}{Syntax(valueStr, "number")}{c[")"](nil)}`
+		result = `{Syntax(Class, "builtin")}{c["."](nil)}{Syntax("new", "builtin")}{c["("](nil)}{Syntax(
+			valueStr,
+			"number"
+		)}{c[")"](nil)}`
 	else -- number, boolean, nil, ...
 		local valueStr = tostring(Value)
 		rendered = valueStr
 		result = Syntax(valueStr, Class)
 	end
-	
+
 	if accumulator then
 		accumulator:addFormatted(result, rendered)
 	end
-	
+
 	return result
 end
 
 local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, PreviousDepth, accumulator)
 	accumulator = accumulator or StringAccumulator.new()
 	IgnoredTables = IgnoredTables or {}
-	
+
 	local CyclicData = IgnoredTables[Table]
 	if CyclicData then
 		local msg = "&quot;[Cyclic reference]&quot;"
@@ -260,7 +326,7 @@ local function TableToSyntaxString(Table, DontShowBytes, IgnoredTables, Previous
 		if accumulator:isTrimmed() then
 			break
 		end
-		
+
 		if Index ~= Key then
 			HasOrder = false
 		end
