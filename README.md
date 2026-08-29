@@ -12,6 +12,8 @@ PacketProfiler
 
 Packet Profiler shows the volume and contents of replication traffic frame by frame. Remote traffic is included out of the box, while a public layer API lets each game add its own sources, such as instance replication, custom networking libraries, state synchronization, or domain-specific metrics.
 
+Remote buffer sizes account for Roblox's transparent Zstandard compression. Compressed values are labeled as estimates alongside their uncompressed serialized size because Roblox does not expose exact per-remote transport framing.
+
 When addons register more traffic sources, the timeline can show all layers together or isolate any individual layer without discarding the combined capture. The view selector stays hidden when remotes are the only registered layer. Selecting a frame opens a breakdown of the calls recorded for the active view.
 
 The **Top spikes** view retains the largest frames from the full profiler session, even after they leave the rolling timeline. It can show the top 5, 10, or 20 frames for the combined view or any registered layer. The details widget becomes a largest-first spike inspector with comparable magnitude bars, contributor summaries, expandable packet data, bulk expand/collapse, and a frozen ranking mode for reading while capture continues.

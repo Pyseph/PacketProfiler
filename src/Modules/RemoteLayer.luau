@@ -49,7 +49,7 @@ local function start(context)
 
 	local function record(remote, firstArgument, ...)
 		local packetData = getPacketData(firstArgument, ...)
-		local size = PacketSizeCounter.GetPacketSize({
+		local sizeDetails = PacketSizeCounter.GetPacketSizeDetails({
 			RunContext = RunService:IsClient() and "Client" or "Server",
 			RemoteType = remote.ClassName,
 			PacketData = packetData,
@@ -57,12 +57,15 @@ local function start(context)
 
 		context.Emit({
 			Name = string.format("%s.%s", remote.Parent:GetFullName(), remote.Name),
-			Size = size,
+			Size = sizeDetails.Size,
 			Data = packetData,
 			RawData = { firstArgument, ... },
 			Metadata = {
 				Remote = remote,
 				RunContext = RunService:IsClient() and "Client" or "Server",
+				UncompressedSize = sizeDetails.UncompressedSize,
+				CompressionSavings = sizeDetails.CompressionSavings,
+				CompressedBufferCount = sizeDetails.CompressedBufferCount,
 			},
 		})
 	end

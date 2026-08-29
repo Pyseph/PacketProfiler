@@ -52,13 +52,21 @@ local MAX_GLYPHS = 20000
 local TRIM_MESSAGE = "... [Trimmed]"
 local TRIM_MESSAGE_LENGTH = #TRIM_MESSAGE
 
-local function GetByteSize(Value: any): string
-	local ValueSize = PacketSizeCounter.GetDataByteSize(Value)
+local function FormatByteSize(ValueSize: number): string
 	if ValueSize < 1000 then
 		return `{ValueSize} bytes`
 	else
 		return string.format("%.3f kilobytes", ValueSize / 1000)
 	end
+end
+
+local function GetByteSize(Value: any): string
+	local Details = PacketSizeCounter.GetDataByteSizeDetails(Value)
+	local Size = FormatByteSize(Details.Size)
+	if Details.CompressedBufferCount > 0 and Details.CompressionSavings > 0 then
+		return `{Size} estimated, {FormatByteSize(Details.UncompressedSize)} uncompressed`
+	end
+	return Size
 end
 
 local StyleGuideColorEnums = {

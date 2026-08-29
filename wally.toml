@@ -8,5 +8,5 @@ license = "MIT"
 
 [dependencies]
 Vide = "centau/vide@0.4.1"
-PacketSizeCounter = "pysephwasntavailable/remotepacketsizecounter@2.4.1"
+PacketSizeCounter = "pysephwasntavailable/remotepacketsizecounter@2.5.0"
 Signal = "stravant/goodsignal@0.2.1"
