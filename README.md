@@ -113,7 +113,7 @@ local addon = PacketProfiler:RegisterAddon({
 The Studio bridge exposes `RegisterLayer`, `RegisterHook`, `Record`, `RegisterAddon`, and `Destroy`. Its `BeforeRecord` and `AfterRecord` hooks run in the game client before packets are batched to the plugin. The full in-game profiler additionally exposes `SetView`, `SetPaused`, `SelectFrame`, `GetLayer`, `GetLayers`, `GetFramePackets`, `GetTopFrames`, frame hooks, and UI signals; view and frame state remain owned by the plugin. `GetTopFrames(view, limit)` returns ranked `{ Frame, Size }` entries retained from the current session.
 
 ## In-game profiling
-Sometimes, simply profiling in studio may not be enough. As such, you can use this plugin **in-game**! Simply grab the latest release `.rbxm` file and place it inside `StarterPlayerScripts`. You can then open the UI through `Ctrl + F5`, and pause/unpause through `Ctrl + P`.
+Sometimes, simply profiling in studio may not be enough. As such, you can use this plugin **in-game**! Simply grab the latest release `.rbxm` file and place it inside `StarterPlayerScripts`. The profiler initializes lazily the first time you press `Ctrl + F5`, so it does not scan remotes or run a frame loop before it is opened. After that, use `Ctrl + F5` to toggle the UI and `Ctrl + P` to pause or unpause capture.
 <https://github.com/Pyseph/PacketProfiler/releases/>
 
 Alternatively, you can install the in-game profiler through **Wally**:

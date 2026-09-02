@@ -57,9 +57,12 @@ local function UIState(props)
 	local profiler = props.Profiler
 	local viewScales = loadViewScales(plugin)
 	local initialScales, initialDefault = getViewScaleConfig(profiler, profiler.View)
+	local initialProfilerEnabled = if plugin
+		then plugin:GetSetting("PacketProfilerEnabled") == true
+		else props.InitialProfilerEnabled == true
 
 	local state = {
-		ProfilerEnabled = source(plugin and plugin:GetSetting("PacketProfilerEnabled") == true or false),
+		ProfilerEnabled = source(initialProfilerEnabled),
 		ChartEnabled = source(plugin and plugin:GetSetting("PacketChartEnabled") == true or false),
 		Mode = source("timeline"),
 		TopCount = source(loadTopCount(plugin)),
