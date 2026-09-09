@@ -23,7 +23,7 @@ local create = Vide.create
 local source = Vide.source
 local switch = Vide.switch
 
-local function PacketChart(props)
+local function PacketChartContents(props, target)
 	local state = props.State
 	local profiler = state.Profiler
 	local arcs = source({})
@@ -210,8 +210,14 @@ local function PacketChart(props)
 		})
 	end
 
+	return holder(target)
+end
+
+local function PacketChart(props)
+	local state = props.State
+	local parent
 	if Packages.IsPlugin then
-		local widget = StudioWidget({
+		parent = StudioWidget({
 			DefaultSize = Vector2.new(520, 420),
 			Enabled = state.ChartEnabled,
 			InitialDockState = Enum.InitialDockState.Float,
@@ -222,18 +228,23 @@ local function PacketChart(props)
 			WidgetTitle = "Packet details",
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		})
-		return holder(widget)
+	else
+		parent = create("ScreenGui")({
+			Enabled = state.ChartEnabled,
+			IgnoreGuiInset = true,
+			Parent = Players.LocalPlayer.PlayerGui,
+			ResetOnSpawn = false,
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		})
 	end
-
-	local screen = create("ScreenGui")({
-		Enabled = state.ChartEnabled,
-		IgnoreGuiInset = true,
-		Parent = Players.LocalPlayer.PlayerGui,
-		ResetOnSpawn = false,
-		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-	})
-	holder(screen)
-	return screen
+	Vide.effect(function()
+		if state.ChartEnabled() then
+			cleanup(Vide.mount(function()
+				PacketChartContents(props, parent)
+			end))
+		end
+	end)
+	return parent
 end
 
 return PacketChart

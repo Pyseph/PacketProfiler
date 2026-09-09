@@ -44,6 +44,7 @@ function Profiler.new()
 		FrameBatchCommitted = Signal.new(),
 		LayersChanged = Signal.new(),
 		PauseChanged = Signal.new(),
+		CaptureChanged = Signal.new(),
 		ViewChanged = Signal.new(),
 		SelectionChanged = Signal.new(),
 		TopFramesChanged = Signal.new(),
@@ -159,7 +160,7 @@ function Profiler:RegisterAddon(addon)
 end
 
 function Profiler:Record(layerId, packet)
-	if self.Paused then
+	if not self:IsCapturing() then
 		return false
 	end
 	local layer = self._registry:Get(layerId)
@@ -216,10 +217,12 @@ function Profiler:SetPaused(paused)
 		return
 	end
 	self.Paused = paused
-	if not paused then
-		self._frames:Seek(os.clock())
-	end
+	self:_updateCapture()
 	self.PauseChanged:Fire(paused)
+end
+
+function Profiler:IsCapturing()
+	return self._running and not self.Paused
 end
 
 function Profiler:SelectFrame(frame)
@@ -228,21 +231,18 @@ function Profiler:SelectFrame(frame)
 end
 
 function Profiler:_commitFrame()
-	if self.Paused then
+	if not self:IsCapturing() then
 		return nil
 	end
 
 	local frame = self._frames:Commit()
-	if
-		self._topFrames:Record(frame, self._registry:GetAll(), function(targetFrame, view)
+	local topFramesChanged = frame.PacketCount > 0
+		and self._topFrames:Record(frame, self._registry:GetAll(), function(targetFrame, view)
 			return self._frames:GetSize(targetFrame, view)
 		end)
-	then
-		self.TopFramesChanged:Fire()
-	end
 	self._hooks:Run("FrameCommitted", frame)
 	self.FrameCommitted:Fire(frame, self.Frames)
-	return frame
+	return frame, topFramesChanged
 end
 
 function Profiler:Start()
@@ -250,35 +250,61 @@ function Profiler:Start()
 		return
 	end
 	self._running = true
+	self:_updateCapture()
+end
+
+function Profiler:Stop()
+	if not self._running then
+		return
+	end
+	self._running = false
+	self:_updateCapture()
+end
+
+function Profiler:_updateCapture()
+	if self._stepConnection then
+		self._stepConnection:Disconnect()
+		self._stepConnection = nil
+	end
+	if not self:IsCapturing() then
+		self._registry:Stop()
+		self.CaptureChanged:Fire(false)
+		return
+	end
+	self._frames:Seek(os.clock())
 	self._registry:Start()
 
 	local stepSignal = RunService:IsClient() and RunService.RenderStepped or RunService.Heartbeat
 	local elapsed = 0
-	table.insert(
-		self._cleanup,
-		stepSignal:Connect(function(deltaTime)
-			elapsed += deltaTime
-			local framesDue = math.floor(elapsed / FRAME_INTERVAL)
-			if framesDue > 0 then
-				elapsed -= framesDue * FRAME_INTERVAL
-				local skippedFrames = math.max(framesDue - MAX_FRAMES, 0)
-				self._frames:Skip(skippedFrames)
-				local committedFrames = table.create(framesDue - skippedFrames)
-				for _ = 1, framesDue - skippedFrames do
-					local frame = self:_commitFrame()
-					if frame then
-						table.insert(committedFrames, frame)
-					end
-				end
-				if #committedFrames > 0 then
-					self.FrameBatchCommitted:Fire(committedFrames, self.Frames)
+	self._stepConnection = stepSignal:Connect(function(deltaTime)
+		elapsed += deltaTime
+		local framesDue = math.floor(elapsed / FRAME_INTERVAL)
+		if framesDue > 0 then
+			elapsed -= framesDue * FRAME_INTERVAL
+			local skippedFrames = math.max(framesDue - MAX_FRAMES, 0)
+			self._frames:Skip(skippedFrames)
+			local committedFrames = table.create(framesDue - skippedFrames)
+			local topFramesChanged = false
+			for _ = 1, framesDue - skippedFrames do
+				local frame, changed = self:_commitFrame()
+				topFramesChanged = topFramesChanged or changed
+				if frame then
+					table.insert(committedFrames, frame)
 				end
 			end
-		end)
-	)
+			if topFramesChanged then
+				self.TopFramesChanged:Fire()
+			end
+			if #committedFrames > 0 then
+				self.FrameBatchCommitted:Fire(committedFrames, self.Frames)
+			end
+		end
+	end)
+	self.CaptureChanged:Fire(true)
 end
 
 function Profiler:Destroy()
+	self:Stop()
 	for _, cleanup in self._addons do
 		if cleanup then
 			Cleanup.run(cleanup)
@@ -292,6 +318,7 @@ function Profiler:Destroy()
 	self.FrameBatchCommitted:DisconnectAll()
 	self.LayersChanged:DisconnectAll()
 	self.PauseChanged:DisconnectAll()
+	self.CaptureChanged:DisconnectAll()
 	self.ViewChanged:DisconnectAll()
 	self.SelectionChanged:DisconnectAll()
 	self.TopFramesChanged:DisconnectAll()

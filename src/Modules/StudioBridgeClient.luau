@@ -73,11 +73,21 @@ function StudioBridgeClient.new(waitSeconds)
 			pending.Responded = true
 		end
 	end)
-	self._flushConnection = RunService.Heartbeat:Connect(function()
-		self:_flushPackets()
+	self._captureConnection = remote:GetAttributeChangedSignal(BridgeProtocol.CaptureAttribute):Connect(function()
+		if not self:IsCapturing() then
+			table.clear(self._packetQueue)
+			self:_flushPackets()
+		end
+		for _, handle in self._layers do
+			handle.SetCapturing(self:IsCapturing())
+		end
 	end)
 
 	return self
+end
+
+function StudioBridgeClient:IsCapturing()
+	return not self._destroyed and self.Remote:GetAttribute(BridgeProtocol.CaptureAttribute) == true
 end
 
 function StudioBridgeClient:RegisterLayer(layer)
@@ -108,10 +118,35 @@ function StudioBridgeClient:RegisterLayer(layer)
 	self.Remote:SetAttribute("LastRegisteredLayer", layer.Id)
 
 	local cleanup = nil
+	local started = false
 	local connected = true
 	local handle
 	handle = {
 		RegistrationId = registrationId,
+		SetCapturing = function(capturing)
+			if not connected or started == capturing then
+				return
+			end
+			started = capturing
+			if cleanup then
+				Cleanup.run(cleanup)
+				cleanup = nil
+			end
+			if capturing and layer.Start then
+				local ok, result = pcall(layer.Start, {
+					Layer = layer,
+					Profiler = self,
+					Emit = function(packet)
+						return self:Record(layer.Id, packet)
+					end,
+				})
+				if not ok then
+					handle:Disconnect()
+					error(string.format("Layer %q failed to start: %s", layer.Id, tostring(result)), 2)
+				end
+				cleanup = result
+			end
+		end,
 		Disconnect = function()
 			if not connected then
 				return
@@ -127,24 +162,14 @@ function StudioBridgeClient:RegisterLayer(layer)
 	}
 	self._layers[layer.Id] = handle
 
-	if layer.Start then
-		local ok, result = pcall(layer.Start, {
-			Layer = layer,
-			Profiler = self,
-			Emit = function(packet)
-				return self:Record(layer.Id, packet)
-			end,
-		})
-		if not ok then
-			handle:Disconnect()
-			error(string.format("Layer %q failed to start: %s", layer.Id, tostring(result)), 2)
-		end
-		cleanup = result
-	end
+	handle.SetCapturing(self:IsCapturing())
 	return handle
 end
 
 function StudioBridgeClient:Record(layerId, packet)
+	if not self:IsCapturing() then
+		return false
+	end
 	assert(self._layers[layerId], string.format("Cannot record for unknown layer %q", tostring(layerId)))
 	assert(type(packet) == "table", "Packet must be a table")
 	assert(type(packet.Name) == "string", "Packet.Name must be a string")
@@ -163,6 +188,11 @@ function StudioBridgeClient:Record(layerId, packet)
 		RegistrationId = handle.RegistrationId,
 		Packet = BridgeProtocol.CreatePacket(transformed),
 	})
+	if not self._flushConnection then
+		self._flushConnection = RunService.Heartbeat:Connect(function()
+			self:_flushPackets()
+		end)
+	end
 	self._hooks:Run("AfterRecord", transformed)
 	return true
 end
@@ -172,6 +202,10 @@ function StudioBridgeClient:RegisterHook(stage, callback)
 end
 
 function StudioBridgeClient:_flushPackets()
+	if self._flushConnection then
+		self._flushConnection:Disconnect()
+		self._flushConnection = nil
+	end
 	if #self._packetQueue == 0 or self._destroyed then
 		return
 	end
@@ -224,7 +258,7 @@ function StudioBridgeClient:Destroy()
 	for _, handle in handles do
 		handle:Disconnect()
 	end
-	self._flushConnection:Disconnect()
+	self._captureConnection:Disconnect()
 	self._responseConnection:Disconnect()
 	self._hooks:Destroy()
 end

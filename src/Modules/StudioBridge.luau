@@ -17,6 +17,13 @@ function StudioBridge.Start(profiler)
 	local connectionCleanups = {}
 	local targets = {}
 	local stopped = false
+	local function sendCaptureState(connection)
+		if connection.Connected then
+			connection:SendMessage(
+				BridgeProtocol.EncodeArguments(BridgeProtocol.CaptureChanged, profiler:IsCapturing())
+			)
+		end
+	end
 	local receiver = BridgeReceiver.new(profiler, function(ownerId, registrationId, accepted, message)
 		local connection = targets[ownerId]
 		if connection and connection.Connected then
@@ -48,7 +55,11 @@ function StudioBridge.Start(profiler)
 			connection:BindToMessage(function(payload)
 				local result = table.pack(pcall(BridgeProtocol.DecodeArguments, payload))
 				if result[1] then
-					receiver:Receive(ownerId, table.unpack(result, 2, result.n))
+					if result[2] == BridgeProtocol.RequestCaptureState then
+						sendCaptureState(connection)
+					else
+						receiver:Receive(ownerId, table.unpack(result, 2, result.n))
+					end
 				else
 					warn("PacketProfiler bridge received an invalid message")
 				end
@@ -59,11 +70,22 @@ function StudioBridge.Start(profiler)
 			connection:GetPropertyChangedSignal("Connected"):Connect(function()
 				if not connection.Connected then
 					detach(connection)
+				else
+					sendCaptureState(connection)
 				end
 			end)
 		)
+		sendCaptureState(connection)
 	end
 
+	table.insert(
+		connections,
+		profiler.CaptureChanged:Connect(function()
+			for connection in connectionCleanups do
+				sendCaptureState(connection)
+			end
+		end)
+	)
 	table.insert(connections, PluginConnectionService.Connected:Connect(attach))
 	for _, connection in PluginConnectionService:GetPluginConnectionsOfType(Enum.PluginConnectionTargetType.Test) do
 		attach(connection)

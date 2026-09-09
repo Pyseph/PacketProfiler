@@ -25,8 +25,9 @@ local PacketProfiler = Toolbar:CreateButton("Open Profiler", "Open Profiler Grap
 local PacketChart = Toolbar:CreateButton("Open Chart", "Open Pie Chart", "rbxassetid://10283406077")
 
 local profiler = Profiler.new()
-profiler:RegisterLayer(RemoteLayer)
-profiler:Start()
+if isTestDataModel then
+	profiler:RegisterLayer(RemoteLayer)
+end
 local stopStudioBridge
 if isTestDataModel then
 	local StudioBridgeTransport = require(Modules.StudioBridgeTransport)

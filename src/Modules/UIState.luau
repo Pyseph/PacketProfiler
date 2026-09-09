@@ -204,6 +204,19 @@ local function UIState(props)
 		end
 	end)
 
+	effect(function()
+		local profilerEnabled = state.ProfilerEnabled()
+		local chartEnabled = state.ChartEnabled()
+		if profilerEnabled or chartEnabled then
+			profiler:Start()
+		else
+			profiler:Stop()
+		end
+	end)
+	cleanup(function()
+		profiler:Stop()
+	end)
+
 	return state
 end
 

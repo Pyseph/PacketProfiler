@@ -118,13 +118,17 @@ local function PacketCircleArcs(props)
 	effect(function()
 		read(props.Arcs)
 		actualAlpha(0)
+		local elapsed = 0
+		local connection
+		connection = RunService.RenderStepped:Connect(function(deltaTime)
+			elapsed = math.min(elapsed + deltaTime * 2, 1)
+			actualAlpha(elapsed)
+			if elapsed == 1 then
+				connection:Disconnect()
+			end
+		end)
+		cleanup(connection)
 	end)
-	cleanup(RunService.RenderStepped:Connect(function(deltaTime)
-		local alpha = actualAlpha()
-		if alpha < 1 then
-			actualAlpha(math.min(alpha + deltaTime * 2, 1))
-		end
-	end))
 
 	return create("Frame")({
 		AnchorPoint = Vector2.new(0.5, 0.5),

@@ -18,6 +18,8 @@ There exist different `project.json` files for different purposes:
 Please use the [issue tracker](https://github.com/Pyseph/PacketProfiler/issues) to report any bugs or file feature requests.
 
 ## Developing
+
+Run `lune run tests/performance.luau` with Lune 0.10.4 to check capture lifecycle, bounded discovery, remote subscription cleanup, and Studio bridge demand. These tests load the source modules with mocked engine signals and instance trees; verify UI behavior and frame times separately in Studio. Run `selene src build` and build both `buildplugin.project.json` and `buildrelease.project.json` with Rojo before release.
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
 ## Adding a new data type

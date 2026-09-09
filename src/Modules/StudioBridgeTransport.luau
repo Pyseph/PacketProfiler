@@ -40,6 +40,16 @@ function StudioBridgeTransport.Start(profiler)
 	local connectionCleanups = {}
 	local pendingMessages = {}
 	local stopped = false
+	local editCapture = {}
+	local function updateCapture()
+		local capturing = profiler:IsCapturing()
+		for connection, enabled in editCapture do
+			capturing = capturing or (connection.Connected and enabled)
+		end
+		inbound:SetAttribute(BridgeProtocol.CaptureAttribute, capturing)
+	end
+	updateCapture()
+	table.insert(connections, profiler.CaptureChanged:Connect(updateCapture))
 	local receiver = BridgeReceiver.new(profiler, function(_, registrationId, accepted, message)
 		outbound:Fire(BridgeProtocol.RegistrationResult, registrationId, accepted, message)
 	end)
@@ -69,6 +79,7 @@ function StudioBridgeTransport.Start(profiler)
 		if not connection.Connected then
 			return
 		end
+		connection:SendMessage(BridgeProtocol.EncodeArguments(BridgeProtocol.RequestCaptureState))
 		for _, payload in pendingMessages do
 			connection:SendMessage(payload)
 		end
@@ -87,13 +98,22 @@ function StudioBridgeTransport.Start(profiler)
 			connection:BindToMessage(function(payload)
 				local result = table.pack(pcall(BridgeProtocol.DecodeArguments, payload))
 				if result[1] then
-					outbound:Fire(table.unpack(result, 2, result.n))
+					if result[2] == BridgeProtocol.CaptureChanged then
+						editCapture[connection] = result[3] == true
+						updateCapture()
+					else
+						outbound:Fire(table.unpack(result, 2, result.n))
+					end
 				end
 			end)
 		)
 		table.insert(
 			cleanup,
 			connection:GetPropertyChangedSignal("Connected"):Connect(function()
+				if not connection.Connected then
+					editCapture[connection] = nil
+				end
+				updateCapture()
 				if connection.Connected then
 					flush(connection)
 				end
@@ -106,6 +126,12 @@ function StudioBridgeTransport.Start(profiler)
 		connections,
 		inbound.Event:Connect(function(...)
 			receiver:Receive("play-client", ...)
+			if ... == BridgeProtocol.RecordBatch then
+				local connection = getEditConnection()
+				if not connection or not editCapture[connection] then
+					return
+				end
+			end
 			send(BridgeProtocol.EncodeArguments(...))
 		end)
 	)
@@ -116,6 +142,7 @@ function StudioBridgeTransport.Start(profiler)
 
 	return function()
 		stopped = true
+		inbound:SetAttribute(BridgeProtocol.CaptureAttribute, false)
 		Cleanup.all(connections)
 		for _, cleanup in connectionCleanups do
 			Cleanup.all(cleanup)

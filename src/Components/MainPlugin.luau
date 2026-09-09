@@ -11,14 +11,19 @@ local function MainPlugin(props)
 	return Vide.mount(function()
 		local theme = StudioTheme()
 		local state = UIState(props)
-		local profilerView = PacketProfilerView({ State = state, Theme = theme })
+		Vide.effect(function()
+			if state.ProfilerEnabled() then
+				Vide.cleanup(Vide.mount(function()
+					PacketProfilerView({ State = state, Theme = theme })
+				end))
+			end
+		end)
 		local chartView = PacketChart({
 			Plugin = props.Plugin,
 			State = state,
 			Theme = theme,
 		})
 
-		Vide.cleanup(profilerView)
 		Vide.cleanup(chartView)
 	end)
 end

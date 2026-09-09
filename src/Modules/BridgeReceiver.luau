@@ -133,7 +133,7 @@ end
 function BridgeReceiver:Receive(ownerId, command, first, second, third)
 	if command == BridgeProtocol.RegisterLayer then
 		self:_registerLayer(ownerId, first, second, third)
-	elseif command == BridgeProtocol.RecordBatch and type(second) == "table" then
+	elseif command == BridgeProtocol.RecordBatch and self.Profiler:IsCapturing() and type(second) == "table" then
 		for _, item in second do
 			self:_record(ownerId, first, item)
 		end

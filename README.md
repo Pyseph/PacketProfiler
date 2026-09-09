@@ -22,6 +22,8 @@ The rolling timeline uses timestamped 60 Hz buckets, so its 256 bars consistentl
 
 The interface is rendered with Vide. The timeline is a mirrored cyclic strip: each commit writes one persistent bar slot and shifts the strip, so existing heights remain untouched until their frames genuinely leave the 256-frame window. This avoids full-chart reconciliation and render-frame polling.
 
+Capture runs while either profiler window is open and capture is unpaused. Closing both windows or pausing disconnects capture adapters, remote discovery, and the capture clock; reopening preserves committed frames and starts a fresh capture bucket. Hidden views unmount their contents. The Studio Edit instance does not discover remotes. Play-client remote discovery walks service children incrementally, with at most 256 instances per heartbeat and a 1 ms target budget, without `QueryDescendants` or `GetDescendants`. Existing remotes begin recording as discovery reaches them; newly added remotes connect immediately during capture.
+
 ![image](https://github.com/Pyseph/PacketProfiler/assets/45090858/9a68dc84-0ad5-4358-9e79-8750d9e40b2e)
 ![image](https://user-images.githubusercontent.com/45090858/181864397-9b9d5e82-72fe-4bee-b29f-9b8e5a16aa4d.png)
 
@@ -39,6 +41,8 @@ Some games may rename their RemoteEvents for network & encoding purposes (such a
 Requiring the in-game package returns the running profiler. In a Studio client with the PacketProfiler plugin installed, it instead returns a bridge to the plugin so game-defined layers appear in the plugin window rather than opening a second profiler UI. The installed plugin connects its Edit and Play client instances through `PluginConnectionService`; no server relay or script-injection permission is required.
 
 Layers describe a source of traffic and receive an `Emit` function. The value returned by `Start` is used as the layer's cleanup function.
+
+`Start` can run again after capture resumes. Return cleanup that disconnects the adapter's listeners and cancels its background work. Studio-bridged adapters follow capture demand from the Play and Edit windows, and only flush packets when a batch is pending. Update the plugin and in-game package together for bridge protocol version 4.
 
 ```luau
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
